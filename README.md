@@ -63,7 +63,8 @@ npm run preview
 
 ## GitHub Pages 배포
 
-1. GitHub 저장소에 이 프로젝트를 올립니다. 현재 디렉터리에는 Git 저장소가 초기화되지 않았으며 실제 원격 배포는 수행하지 않았습니다.
+1. GitHub 저장소는 [rurube/ourband](https://github.com/rurube/ourband)입니다.
+   배포 주소: https://rurube.github.io/ourband/#/login
 2. GitHub 저장소 Settings → Pages → Source를 **GitHub Actions**로 설정합니다.
 3. 필요할 때 Settings → Secrets and variables → Actions → Variables에 위 두 Supabase 공개 변수를 등록합니다. Phase 1에서는 생략 가능합니다.
 4. `main` 브랜치에 push하거나 Actions의 `Deploy to GitHub Pages`를 수동 실행합니다. 다른 기본 브랜치를 사용하면 workflow의 `branches`를 수정합니다.
@@ -74,9 +75,9 @@ Actions는 `configure-pages`가 반환한 `base_path`를 Vite에 전달하므로
 로컬에서 하위 경로 빌드를 확인하려면:
 
 ```sh
-VITE_BASE_PATH=/myband/ npm run build
+VITE_BASE_PATH=/ourband/ npm run build
 npm run preview
-# http://localhost:4173/myband/#/songs
+# http://localhost:4173/ourband/#/songs
 ```
 
 구성 근거: [Vite GitHub Pages 배포](https://vite.dev/guide/static-deploy), [Tailwind Vite 설치](https://tailwindcss.com/docs/installation/using-vite).
@@ -97,7 +98,6 @@ Phase 3에서 닉네임+PIN 인증, 초대 코드 서버 검증, 요청 제한, 
 
 - `npm install` 완료, 설치 시 npm audit 취약점 0건
 - `npm run build` 성공 (strict TypeScript 검사 + Vite 프로덕션 빌드)
-- `VITE_BASE_PATH=/myband/ npm run build` 성공, 생성 HTML의 JS·CSS·favicon 경로와 실제 파일 존재 확인
+- `VITE_BASE_PATH=/ourband/ npm run build` 성공, 생성 HTML의 JS·CSS·favicon 경로와 실제 파일 존재 확인
 - 이 실행 환경에는 연결 가능한 브라우저가 없어 데스크톱·모바일 시각 QA와 클릭 동작 검증은 미수행. 실제 배포 후에도 화면 및 이동을 확인해야 합니다.
 - 원격 GitHub Pages 배포와 Supabase 연결 검증은 미수행
-# ourband
