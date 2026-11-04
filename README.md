@@ -1,6 +1,6 @@
 # 우리의 합주 · My Band
 
-밴드 희망곡 및 합주 관리 웹앱. **현재 Phase 1(프로젝트 초기화 및 화면 구조)만 구현**했습니다. 기존 저장소는 비어 있어 Google Apps Script 코드나 이전할 데이터는 제공되지 않았습니다.
+밴드 희망곡 및 합주 관리 웹앱. **Phase 1 화면과 Phase 2 데이터베이스 파일을 구현**했습니다. 실제 인증과 화면 데이터 연결은 이후 단계입니다. 기존 저장소는 비어 있어 Google Apps Script 코드나 이전할 데이터는 제공되지 않았습니다.
 
 ## 실행
 
@@ -82,17 +82,25 @@ npm run preview
 
 구성 근거: [Vite GitHub Pages 배포](https://vite.dev/guide/static-deploy), [Tailwind Vite 설치](https://tailwindcss.com/docs/installation/using-vite).
 
-## 다음 단계 — Phase 2
+## Phase 2 — 데이터베이스
 
-다음 단계는 사용자 확인 후 별도로 진행합니다.
+테이블 8개, FK·UNIQUE·CHECK·인덱스·updated_at 트리거, RLS와 회원 전용 RPC 5개를 추가했습니다. 원본 투표·댓글 작성자·내부 인증 매핑은 비공개 스키마에 분리합니다. 프런트엔드는 아직 Phase 1 미리보기입니다.
 
-- Supabase 프로젝트 생성 및 지역 선택, 로컬 Supabase CLI / Docker 준비
-- SQL 마이그레이션: FK·UNIQUE·검색/날짜 인덱스·updated_at 처리
-- 공개 프로필과 비공개 계정 매핑 분리
-- 투표자 / 댓글 작성자 ID를 보호하는 조회 경로 및 집계 설계
-- 비로그인 접근 차단과 본인 투표 정책을 포함한 RLS 및 정책 테스트
+```sh
+npm run test:db
+```
 
-Phase 3에서 닉네임+PIN 인증, 초대 코드 서버 검증, 요청 제한, 계정 복구를 연결합니다. 실제 시트 CSV와 원본 프로젝트가 제공되면 Phase 8에서 곡 ID 보존과 기존 익명 투표 보존/초기화 방식을 정해 이전 도구와 가이드를 작성합니다. Phase 1에서는 SQL·Edge Function·이전 스크립트를 만들지 않습니다.
+Docker 없이 PostgreSQL 엔진에서 92개 권한·무결성·RLS 검증을 실행합니다. Supabase CLI 3과 로컬 pgTAP 테스트도 준비했습니다. 전체 구조·API 계약·테스트 한계·원격 적용 방법은 [데이터베이스 가이드](docs/database.md)를 참고하세요.
+
+대상 프로젝트 `mspbmvjowvwtcwlporqa`에 마이그레이션 두 개를 적용했습니다. 원격 DB에서도 92개 검증을 임시 데이터로 실행 후 롤백했으며, DB lint 오류·경고가 없습니다. 재적용과 검증 방법은 위 가이드에 기록했습니다.
+
+## 다음 단계 — Phase 3
+
+- 초대 코드 서버 검증 후 Auth 계정·프로필·비공개 매핑 생성
+- 닉네임 + PIN Edge Functions, 서버 요청 제한
+- 세션 유지·로그아웃·인증 보호 및 다른 기기 로그인
+- 관리자 복구와 PIN 초기화 경로
+- Supabase Auth 비밀번호 정책·SDK 세션 동작 검증
 
 ## Phase 1 검증 기록
 
@@ -100,4 +108,4 @@ Phase 3에서 닉네임+PIN 인증, 초대 코드 서버 검증, 요청 제한, 
 - `npm run build` 성공 (strict TypeScript 검사 + Vite 프로덕션 빌드)
 - `VITE_BASE_PATH=/ourband/ npm run build` 성공, 생성 HTML의 JS·CSS·favicon 경로와 실제 파일 존재 확인
 - 이 실행 환경에는 연결 가능한 브라우저가 없어 데스크톱·모바일 시각 QA와 클릭 동작 검증은 미수행. 실제 배포 후에도 화면 및 이동을 확인해야 합니다.
-- 원격 GitHub Pages 배포와 Supabase 연결 검증은 미수행
+- Phase 1 초기 검증 이후 GitHub Pages 배포 완료. Phase 2에서 원격 Supabase 마이그레이션 및 DB 권한 검증 완료. 실제 프런트 인증·데이터 연결은 아직 미구현

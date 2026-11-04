@@ -1,0 +1,29 @@
+name: Database checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/test-db.mjs'
+      - 'package*.json'
+      - '.github/workflows/database-tests.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/test-db.mjs'
+      - 'package*.json'
+      - '.github/workflows/database-tests.yml'
+permissions:
+  contents: read
+jobs:
+  postgres-assertions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:db
+      - run: npm run build
