@@ -19,22 +19,30 @@ try {
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
   `)
-  const migrations = (await readdir('supabase/migrations')).filter(p => p.endsWith('.sql')).sort()
-  for (const name of migrations) {
-    await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'))
-    console.log(`PASS migration: ${name}`)
-  }
   let total = 0
-  for (const suite of ['assertions.sql', 'band-auth.sql', 'song-catalog.sql']) {
+  async function suite(name, minimum) {
     await db.exec('begin')
-    const results = await db.exec(await readFile(`supabase/tests/${suite}`, 'utf8'))
+    const results = await db.exec(await readFile(`supabase/test-support/${name}`, 'utf8'))
     const assertions = results.flatMap(result => result.rows).filter(row => row.assertion)
     for (const row of assertions) console.log(`PASS: ${row.assertion}`)
-    if (assertions.length < ({ 'assertions.sql': 90, 'band-auth.sql': 35, 'song-catalog.sql': 25 }[suite])) throw new Error('Database assertion suite did not run completely')
+    if (assertions.length < minimum) throw new Error(`Incomplete suite ${name}`)
     await db.exec('rollback')
     total += assertions.length
   }
-  console.log(`\n${total} PostgreSQL integrity / permission / RLS assertions passed.`)
+  const migrations = (await readdir('supabase/migrations')).filter(p => p.endsWith('.sql')).sort()
+  for (const name of migrations) {
+    if (name === '20261105020000_account_memberships.sql') {
+      // Keep historical contracts verified against the historical schema, then
+      // exercise a real populated-database upgrade before current-model tests.
+      for (const [file, minimum] of [['assertions.sql',90],['band-auth.sql',35],['song-catalog.sql',25]]) await suite(file, minimum)
+      await db.exec(await readFile('supabase/test-support/account-migration-before.sql','utf8'))
+    }
+    await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'))
+    console.log(`PASS migration: ${name}`)
+  }
+  await suite('account-migration-after.sql', 7)
+  await suite('memberships.sql', 40)
+  console.log(`\n${total} PostgreSQL historical / migration preservation / current membership assertions passed.`)
   console.log('Limit: Auth/REST/Realtime services and hosted Supabase are not exercised by PGlite.')
 } catch (error) {
   // Avoid dumping SQL bodies, query data or connection secrets in CI logs.

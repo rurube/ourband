@@ -1,5 +1,7 @@
 # Phase 4 — 희망곡 등록·수정·조회
 
+다중 밴드 확장 후에는 각 요청에 선택한 밴드의 `x-band-id`를 고정합니다. 계정·소속·닉네임 구조와 최신 검증은 [계정 가이드](accounts.md)를 확인하세요.
+
 로그인한 밴드의 희망곡을 실제 Supabase 데이터로 조회·등록·수정합니다. 리더와 구성원의 곡 편집 권한은 같습니다. 다른 밴드의 데이터는 목록·검색·직접 ID 조회·수정 모두 RLS와 RPC 내부 밴드 검사로 차단합니다.
 
 ## 사용할 수 있는 기능
@@ -67,7 +69,7 @@ songs의 필드: `id, title, artist, bpm, vocal_type, youtube_url, notes, is_con
 | src/songs/SongEditor.tsx | native dialog, 입력 유지, 중복 제출 차단, 수정 충돌 처리 |
 | src/songs/SongCard.tsx | 메타데이터·링크·읽기 전용 집계·수정 버튼·스켈레톤 |
 | src/songs/model_test.ts | 입력·URL·편집 payload 테스트 |
-| supabase/tests/song-catalog.sql | 검색·정렬·페이지·밴드/익명 접근 정책 검증 |
+| supabase/test-support/song-catalog.sql | 검색·정렬·페이지·밴드/익명 접근 정책 검증 |
 | scripts/test-songs-remote.mjs | 분리된 QA 밴드에서 실제 Auth/REST/곡 관계 통합 검증 |
 
 ## 실행 및 적용

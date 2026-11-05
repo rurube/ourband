@@ -10,7 +10,7 @@ const url = process.env.TEST_SUPABASE_URL
 const key = process.env.TEST_SUPABASE_PUBLISHABLE_KEY
 const service = process.env.TEST_SUPABASE_SERVICE_KEY
 if (!url || !key || !service) throw new Error('Remote verification credentials are required in process memory')
-const client = apiKey => createClient(url, apiKey, { auth: { persistSession: false, autoRefreshToken: false, storageKey: `qa-${randomUUID()}` } })
+const client = (apiKey, bandId) => createClient(url, apiKey, { global: { headers: bandId ? { 'x-band-id': bandId } : {} }, auth: { persistSession: false, autoRefreshToken: false, storageKey: `qa-${randomUUID()}` } })
 const admin = client(service)
 const nonce = randomUUID().slice(0,8)
 const ids = new Set(); const bands = new Set(); let checks = 0
@@ -22,12 +22,12 @@ async function account(label, ownBand) {
   const password = `Qa1!${randomUUID().replaceAll('-', '')}${randomUUID().replaceAll('-', '')}`
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true }); assert.ifError(error)
   ids.add(data.user.id)
-  const provisioned = await admin.rpc('auth_provision', {
-    p_user_id: data.user.id, p_email: email, p_nickname: `qa-catalog-${label}-${nonce}`,
+  const provisioned = await admin.rpc('auth_signup', {
+    p_user: data.user.id, p_email: email, p_login_id: `qacat_${label}_${nonce}`, p_nickname: `qa-catalog-${label}-${nonce}`,
     p_band_name: ownBand ? `QA catalog ${nonce} ${label}` : null, p_invite_hash: ownBand ? null : inviteHash,
-    p_recovery_hash: ownBand ? digest(randomUUID()) : null, p_code_hash: ownBand ? (label === 'a' ? inviteHash : digest(randomUUID())) : null,
+    p_recovery_hash: digest(randomUUID()), p_code_hash: ownBand ? (label === 'a' ? inviteHash : digest(randomUUID())) : null,
   }); assert.ifError(provisioned.error); bands.add(provisioned.data)
-  const user = client(key); const login = await user.auth.signInWithPassword({ email, password }); assert.ifError(login.error)
+  const user = client(key, provisioned.data); const login = await user.auth.signInWithPassword({ email, password }); assert.ifError(login.error)
   return { client: user, id: data.user.id, bandId: provisioned.data }
 }
 async function catalog(user, args = {}) {

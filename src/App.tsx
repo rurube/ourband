@@ -11,7 +11,8 @@ export function App() {
     <Route element={<Layout />}>
       <Route index element={<Navigate to="/login" replace />} />
       <Route path="login" element={<LoginPage />} />
-      <Route element={<RequireAuth />}><Route path="band" element={<BandPage />} />
+      <Route element={<RequireAuth requireBand={false} />}><Route path="band" element={<BandPage />} /></Route>
+      <Route element={<RequireAuth />}>
       <Route path="songs" element={<SongsPage />} />
       <Route path="rehearsals" element={<RehearsalsPage />} /></Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -26,9 +26,9 @@ export function SongsPage() {
     const timer = setTimeout(() => setFilters(old => old.search === search.trim() ? old : { ...old, search: search.trim(), page: 0 }), 300)
     return () => clearTimeout(timer)
   }, [search])
-  const catalog = useQuery({ queryKey: songKeys.catalog(bandId, filters), queryFn: ({ signal }) => fetchCatalog(filters, signal) })
+  const catalog = useQuery({ queryKey: songKeys.catalog(bandId, filters), queryFn: ({ signal }) => fetchCatalog(bandId, filters, signal) })
   const confirmedFilters = { ...initialFilters, confirmed: true, sort: 'recent' as const, page: confirmedPage }
-  const confirmed = useQuery({ queryKey: songKeys.catalog(bandId, confirmedFilters), enabled: expanded, queryFn: ({ signal }) => fetchCatalog(confirmedFilters, signal) })
+  const confirmed = useQuery({ queryKey: songKeys.catalog(bandId, confirmedFilters), enabled: expanded, queryFn: ({ signal }) => fetchCatalog(bandId, confirmedFilters, signal) })
   const recent = useQuery({ queryKey: songKeys.recent(bandId), queryFn: ({ signal }) => fetchRecentSongs(bandId, signal) })
   const totalPages = Math.max(1, Math.ceil((catalog.data?.total ?? 0) / pageSize))
   const confirmedTotal = catalog.data?.confirmed_total ?? confirmed.data?.total

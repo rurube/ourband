@@ -1,4 +1,4 @@
-import { hmac, HttpError, nickname, pin, randomCode, readBody, sha256, text } from './security.ts'
+import { hmac, HttpError, nickname, loginId, uuid, pin, randomCode, readBody, sha256, text } from './security.ts'
 function assert(value: boolean, message: string) { if (!value) throw new Error(message) }
 function rejects(fn: () => unknown) { try { fn() } catch (error) { assert(error instanceof HttpError, 'expected controlled HTTP error'); return }; throw new Error('Expected rejection') }
 Deno.test('PIN accepts 6–12 digits, preserves leading zeros, rejects whitespace and weak formats', () => {
@@ -31,4 +31,15 @@ Deno.test('request parsing rejects oversized bodies and non-object JSON', async 
     try { await readBody(make(body)) } catch (error) { rejected = error instanceof HttpError }
     assert(rejected, 'unsafe request accepted')
   }
+})
+
+Deno.test('new login IDs are independent of Unicode legacy IDs and band nicknames', () => {
+  assert(loginId(' USER.name-1 ', true) === 'USER.name-1', 'trim account ID')
+  assert(loginId('이전닉네임') === '이전닉네임', 'legacy login must continue to work')
+  for (const value of ['abc', 'a b c', '_abcd', '한글아이디', 'a'.repeat(31)]) rejects(() => loginId(value, true))
+  assert(nickname('한글 별명') === '한글 별명', 'nickname independent of login ID syntax')
+})
+Deno.test('band IDs must be valid UUIDs before privileged actions', () => {
+  assert(uuid('40000000-0000-0000-0000-000000000001').length === 36, 'valid band ID')
+  for (const value of ['not-a-uuid', '', null, '40000000-0000-0000-0000-000000000001junk']) rejects(() => uuid(value))
 })

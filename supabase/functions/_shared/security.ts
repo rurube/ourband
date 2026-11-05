@@ -10,6 +10,17 @@ export function nickname(value: unknown): string {
   if (!result || /[\p{Cc}\p{Cf}]/u.test(result)) throw new HttpError(400, '닉네임은 1~30자로 입력해주세요.')
   return result
 }
+export function loginId(value: unknown, newAccount = false): string {
+  const result = text(value, 30)
+  if (!result || /[\p{Cc}\p{Cf}]/u.test(result) || (newAccount && !/^[A-Za-z0-9][A-Za-z0-9_.-]{3,29}$/.test(result)))
+    throw new HttpError(400, newAccount ? '아이디는 영문·숫자로 시작하는 4~30자의 영문·숫자·점·밑줄·하이픈으로 입력해주세요.' : '아이디를 확인해주세요.')
+  return result
+}
+export function uuid(value: unknown): string {
+  const result = text(value, 36)
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result)) throw new HttpError(400, '밴드를 확인해주세요.')
+  return result
+}
 export function pin(value: unknown): string {
   if (typeof value !== 'string' || !/^[0-9]{6,12}$/.test(value)) throw new HttpError(400, 'PIN은 숫자 6~12자리로 입력해주세요.')
   return value

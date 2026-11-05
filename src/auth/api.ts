@@ -1,8 +1,9 @@
 import { supabase } from '../lib/supabase'
 
-export type AuthAction = 'login' | 'create-band' | 'join-band' | 'recover' | 'rotate-invite' | 'reset-member-pin' | 'rotate-recovery'
+export type AuthAction = 'login' | 'signup-create-band' | 'signup-join-band' | 'create-band' | 'join-band' | 'recover' | 'rotate-invite' | 'reset-member-pin' | 'rotate-recovery' | 'change-login-id'
 export interface AuthResult {
   session?: { access_token: string; refresh_token: string }
+  bandId?: string
   created?: boolean
   bandCode?: string | null
   recoveryKey?: string | null

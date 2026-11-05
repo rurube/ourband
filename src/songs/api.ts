@@ -26,22 +26,22 @@ function client() {
 function timeout(signal?: AbortSignal) {
   return signal ? AbortSignal.any([signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000)
 }
-export async function fetchCatalog(filters: CatalogFilters, signal?: AbortSignal): Promise<SongCatalog> {
+export async function fetchCatalog(bandId: string, filters: CatalogFilters, signal?: AbortSignal): Promise<SongCatalog> {
   const { data, error } = await client().rpc('list_song_catalog', {
     p_search: filters.search, p_vocal: filters.vocal, p_sort: filters.sort,
     p_confirmed: filters.confirmed, p_limit: pageSize, p_offset: filters.page * pageSize,
-  }).abortSignal(timeout(signal))
+  }).setHeader('x-band-id', bandId).abortSignal(timeout(signal))
   if (error) fail(error)
   return data as SongCatalog
 }
 export async function fetchRecentSongs(bandId: string, signal?: AbortSignal): Promise<Song[]> {
   const { data, error } = await client().from('songs').select(columns).eq('band_id', bandId)
-    .order('created_at', { ascending: false }).order('id').limit(5).abortSignal(timeout(signal))
+    .order('created_at', { ascending: false }).order('id').limit(5).setHeader('x-band-id', bandId).abortSignal(timeout(signal))
   if (error) fail(error)
   return data as Song[]
 }
 export async function fetchSong(bandId: string, id: string, signal?: AbortSignal): Promise<Song> {
-  const { data, error } = await client().from('songs').select(columns).eq('band_id', bandId).eq('id', id).abortSignal(timeout(signal)).maybeSingle()
+  const { data, error } = await client().from('songs').select(columns).eq('band_id', bandId).eq('id', id).setHeader('x-band-id', bandId).abortSignal(timeout(signal)).maybeSingle()
   if (error) fail(error)
   if (!data) throw new Error('곡을 찾을 수 없거나 접근 권한이 없습니다.')
   return data as Song
@@ -50,7 +50,7 @@ export async function saveSong(bandId: string, payload: SongPayload, original: S
   const query = original
     ? client().from('songs').update(payload).eq('id', original.id).eq('band_id', bandId).eq('updated_at', original.updated_at)
     : client().from('songs').insert(payload)
-  const { data, error } = await query.select(columns).abortSignal(timeout()).maybeSingle()
+  const { data, error } = await query.select(columns).setHeader('x-band-id', bandId).abortSignal(timeout()).maybeSingle()
   if (error) fail(error)
   if (!data) throw new SongConflictError('다른 멤버가 곡을 먼저 수정했거나 접근 권한이 변경됐습니다. 작성 중인 입력값은 유지했습니다.')
   return data as Song
