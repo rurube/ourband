@@ -1,6 +1,6 @@
 # 우리의 합주 · My Band
 
-밴드 희망곡 및 합주 관리 웹앱. **Phase 1 화면과 Phase 2 데이터베이스 파일을 구현**했습니다. 실제 인증과 화면 데이터 연결은 이후 단계입니다. 기존 저장소는 비어 있어 Google Apps Script 코드나 이전할 데이터는 제공되지 않았습니다.
+밴드 희망곡 및 합주 관리 웹앱. **Phase 1~3: 화면·데이터베이스·밴드 초대 및 닉네임/PIN 인증을 구현**했습니다. 곡·합주 데이터 UI 연결은 Phase 4 이후입니다. 기존 저장소는 비어 있어 Google Apps Script 코드나 이전할 데이터는 제공되지 않았습니다.
 
 ## 실행
 
@@ -12,7 +12,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-출력된 로컬 주소를 열어 확인합니다. 환경변수 없이도 모든 Phase 1 화면을 확인할 수 있습니다.
+출력된 로컬 주소를 열어 확인합니다. 실제 로그인에는 Supabase 공개 환경변수와 배포된 band-auth 함수가 필요합니다. 환경변수가 없으면 로그인 화면에서 설정 안내를 표시합니다.
 
 ```sh
 npm run build
@@ -32,7 +32,9 @@ npm run preview
 - Supabase 클라이언트 초기화 모듈 (환경변수가 둘 다 있을 때만 생성)
 - GitHub Pages 저장소 하위 경로와 새로고침 지원 및 Actions 배포 설정
 
-**실제 인증, 로그인 상태, 자동 로그인, 로그아웃, 데이터 조회·저장, 검색·정렬 결과, 투표, 댓글, 일정 편집은 아직 구현하지 않았습니다.** 폼 제출은 안내만 표시하며 PIN이나 초대 코드를 전송·저장하지 않습니다. 로그인 성공을 흉내 내거나 임의의 회원 정보를 만들지 않습니다. 미리보기 경로는 인증 없이 열리지만 실제 데이터가 없고 Supabase API도 호출하지 않습니다. Phase 3에서 데이터 페이지의 인증 보호를 연결해야 합니다.
+**밴드 리더는 초대 코드 없이 밴드를 만들고, 구성원은 리더가 발급한 밴드 코드로 가입합니다.** 닉네임·PIN 로그인, 세션 유지·갱신·로그아웃, 밴드별 접근 제한, 리더 계정 복구 및 구성원 PIN 초기화를 구현했습니다. 곡·합주 화면은 다음 단계까지 기본 구조로 표시하며 비로그인 사용자는 로그인 화면으로 이동합니다.
+
+인증 구조·비밀값·운영·검증 방법은 [Phase 3 인증 가이드](docs/authentication.md)를 확인하세요.
 
 ## 주요 파일
 
@@ -42,7 +44,10 @@ npm run preview
 | `src/providers/AppProviders.tsx` | QueryClient 및 HashRouter |
 | `src/components/Layout.tsx` | 헤더, 내비게이션, Phase 안내, 푸터 |
 | `src/components/EmptyState.tsx` | 공통 빈 상태 및 미리보기 표시 |
-| `src/pages/LoginPage.tsx` | 로그인·회원가입 UI |
+| `src/pages/LoginPage.tsx` | 로그인·리더 가입·코드 가입·리더 복구 |
+| `src/pages/BandPage.tsx` | 멤버 목록·초대·PIN 초기화 |
+| `src/auth/` | Auth 상태·보호 라우트·Edge API 클라이언트 |
+| `supabase/functions/band-auth/` | 서버 인증·가입·리더 관리 |
 | `src/pages/SongsPage.tsx` | 희망곡 기본 구조 |
 | `src/pages/RehearsalsPage.tsx` | 합주 기본 구조 |
 | `src/lib/supabase.ts` | 공개 환경변수를 이용한 클라이언트 초기화 |
@@ -55,8 +60,8 @@ npm run preview
 
 | 변수 | 설명 |
 | --- | --- |
-| `VITE_SUPABASE_URL` | Supabase 프로젝트 URL, Phase 1에서는 비워도 됨 |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | 브라우저 공개용 publishable key, Phase 1에서는 비워도 됨 |
+| `VITE_SUPABASE_URL` | Supabase 프로젝트 URL. 실제 인증에는 필수 |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | 브라우저 공개용 publishable key. 실제 인증에는 필수 |
 | `VITE_BASE_PATH` | 로컬 `/`, 수동 프로젝트 사이트 빌드 `/저장소이름/` |
 
 모든 `VITE_` 변수는 빌드 결과에 공개됩니다. **service_role, 관리자 키, 실제 초대 코드, 내부 로그인 이메일을 절대 넣지 마세요.** `.env.local`은 Git에서 제외됩니다. 서버 비밀값은 이후 Supabase Edge Functions의 secrets로 설정합니다.
@@ -66,7 +71,7 @@ npm run preview
 1. GitHub 저장소는 [rurube/ourband](https://github.com/rurube/ourband)입니다.
    배포 주소: https://rurube.github.io/ourband/#/login
 2. GitHub 저장소 Settings → Pages → Source를 **GitHub Actions**로 설정합니다.
-3. 필요할 때 Settings → Secrets and variables → Actions → Variables에 위 두 Supabase 공개 변수를 등록합니다. Phase 1에서는 생략 가능합니다.
+3. 필요할 때 Settings → Secrets and variables → Actions → Variables에 위 두 Supabase 공개 변수를 등록합니다. Phase 3 실제 인증에는 두 공개 변수가 모두 필요합니다.
 4. `main` 브랜치에 push하거나 Actions의 `Deploy to GitHub Pages`를 수동 실행합니다. 다른 기본 브랜치를 사용하면 workflow의 `branches`를 수정합니다.
 5. 배포 job에 표시되는 URL을 확인합니다.
 
@@ -84,7 +89,7 @@ npm run preview
 
 ## Phase 2 — 데이터베이스
 
-테이블 8개, FK·UNIQUE·CHECK·인덱스·updated_at 트리거, RLS와 회원 전용 RPC 5개를 추가했습니다. 원본 투표·댓글 작성자·내부 인증 매핑은 비공개 스키마에 분리합니다. 프런트엔드는 아직 Phase 1 미리보기입니다.
+테이블 8개, FK·UNIQUE·CHECK·인덱스·updated_at 트리거, RLS와 회원 전용 RPC 5개를 추가했습니다. 원본 투표·댓글 작성자·내부 인증 매핑은 비공개 스키마에 분리합니다. Phase 3에서 밴드별 RLS와 인증을 추가했으며 아래 가이드는 Phase 2 당시의 기본 구조를 설명합니다.
 
 ```sh
 npm run test:db
@@ -94,13 +99,27 @@ Docker 없이 PostgreSQL 엔진에서 92개 권한·무결성·RLS 검증을 실
 
 대상 프로젝트 `mspbmvjowvwtcwlporqa`에 마이그레이션 두 개를 적용했습니다. 원격 DB에서도 92개 검증을 임시 데이터로 실행 후 롤백했으며, DB lint 오류·경고가 없습니다. 재적용과 검증 방법은 위 가이드에 기록했습니다.
 
-## 다음 단계 — Phase 3
+## Phase 3 — 밴드 초대 및 인증
 
-- 초대 코드 서버 검증 후 Auth 계정·프로필·비공개 매핑 생성
-- 닉네임 + PIN Edge Functions, 서버 요청 제한
-- 세션 유지·로그아웃·인증 보호 및 다른 기기 로그인
-- 관리자 복구와 PIN 초기화 경로
-- Supabase Auth 비밀번호 정책·SDK 세션 동작 검증
+- 밴드 생성자는 리더, 코드로 가입한 사용자는 해당 밴드 구성원
+- 서비스 전체에서 닉네임 UNIQUE, 현재 계정당 밴드 하나
+- Edge Function: 닉네임/PIN 인증, 서버 요청 제한, 초대·복구 키 해시 저장
+- 정상 Supabase Auth 세션과 다른 기기 로그인·갱신·로그아웃
+- 프로필·곡·일정·투표·댓글의 밴드별 RLS 격리
+- 리더의 코드 재발급·구성원 PIN 초기화·본인 복구 키 재발급 화면
+
+```sh
+npm run test:db
+npm run check:edge
+npm run test:edge
+npm run build
+```
+
+원격 인증 함수 배포 및 실제 인증 통합 검증 31개를 완료했습니다. 로컬/원격 DB 검증 131개, 보안 유틸리티 5개와 빌드도 통과했습니다. 전체 파일과 API 계약은 [인증 가이드](docs/authentication.md)에 정리했습니다.
+
+## 다음 단계 — Phase 4
+
+로그인한 밴드의 희망곡 목록·등록·수정·중복 검사·보컬 구분·YouTube 링크·검색을 실제 데이터와 연결합니다.
 
 ## Phase 1 검증 기록
 
@@ -108,4 +127,4 @@ Docker 없이 PostgreSQL 엔진에서 92개 권한·무결성·RLS 검증을 실
 - `npm run build` 성공 (strict TypeScript 검사 + Vite 프로덕션 빌드)
 - `VITE_BASE_PATH=/ourband/ npm run build` 성공, 생성 HTML의 JS·CSS·favicon 경로와 실제 파일 존재 확인
 - 이 실행 환경에는 연결 가능한 브라우저가 없어 데스크톱·모바일 시각 QA와 클릭 동작 검증은 미수행. 실제 배포 후에도 화면 및 이동을 확인해야 합니다.
-- Phase 1 초기 검증 이후 GitHub Pages 배포 완료. Phase 2에서 원격 Supabase 마이그레이션 및 DB 권한 검증 완료. 실제 프런트 인증·데이터 연결은 아직 미구현
+- Phase 1 초기 검증 이후 GitHub Pages 배포 완료. Phase 2에서 원격 Supabase 마이그레이션 및 DB 권한 검증 완료. Phase 3에서 프런트 인증을 추가했으며 곡·합주 데이터 UI 연결은 후속 단계

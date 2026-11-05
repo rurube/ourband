@@ -20,6 +20,9 @@ begin
 end;
 $$;
 
+insert into public.bands(id,name) values('00000000-0000-0000-0000-000000000010','테스트 밴드');
+alter table public.profiles alter column band_id set default '00000000-0000-0000-0000-000000000010';
+
 insert into auth.users (id) values
  ('00000000-0000-0000-0000-000000000001'),
  ('00000000-0000-0000-0000-000000000002'),
@@ -65,9 +68,9 @@ select pg_temp.expect_error($s$select public.add_comment('legacy-1','hello')$s$,
 reset role;
 
 -- Legacy ID fixture provisioned by the server/importer.
-insert into public.songs(id,title,artist,vocal_type,created_by,updated_at) values
- ('legacy-1','First Song','Band','female','00000000-0000-0000-0000-000000000001','2000-01-01'),
- ('legacy-2','Second Song','Band','male','00000000-0000-0000-0000-000000000001','2000-01-01');
+insert into public.songs(id,title,artist,vocal_type,created_by,updated_at,band_id) values
+ ('legacy-1','First Song','Band','female','00000000-0000-0000-0000-000000000001','2000-01-01','00000000-0000-0000-0000-000000000010'),
+ ('legacy-2','Second Song','Band','male','00000000-0000-0000-0000-000000000001','2000-01-01','00000000-0000-0000-0000-000000000010');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
@@ -188,7 +191,7 @@ select pg_temp.assert_true((select likes=1 and dislikes=1 and comment_count=1 an
 reset role;
 
 -- Retain a historical assignment alongside an identically named guest.
-insert into public.rehearsals(rehearsal_date) values ('2001-01-01');
+insert into public.rehearsals(rehearsal_date,band_id) values ('2001-01-01','00000000-0000-0000-0000-000000000010');
 insert into public.rehearsal_songs(rehearsal_id,song_id) select id,'legacy-1' from public.rehearsals;
 insert into public.rehearsal_sessions(rehearsal_song_id,session_type,member_id,nickname_snapshot)
  select id,'vocal','00000000-0000-0000-0000-000000000001','하루' from public.rehearsal_songs;

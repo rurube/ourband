@@ -1,0 +1,65 @@
+-- Separate, rolled-back suite for two independent bands and server-only auth RPCs.
+create function pg_temp.assert_true(value boolean,label text) returns text language plpgsql as $$ begin
+ if value is distinct from true then raise exception 'FAIL: %',label; end if; return label; end; $$;
+create function pg_temp.expect_error(statement text,expected_state text,label text) returns text language plpgsql as $$ begin
+ begin execute statement; exception when others then if sqlstate=expected_state then return label; end if;
+ raise exception 'FAIL: %, expected %, got % (%)',label,expected_state,sqlstate,sqlerrm; end;
+ raise exception 'FAIL: %, statement unexpectedly succeeded',label; end; $$;
+insert into auth.users(id) values
+ ('10000000-0000-0000-0000-000000000001'),('10000000-0000-0000-0000-000000000002'),
+ ('10000000-0000-0000-0000-000000000003'),('10000000-0000-0000-0000-000000000004');
+set local role service_role;
+select public.auth_provision('10000000-0000-0000-0000-000000000001','leader-a@internal.invalid','Leader A','Band A',null,repeat('a',64),repeat('b',64));
+select public.auth_provision('10000000-0000-0000-0000-000000000002','member-a@internal.invalid','Member A',null,repeat('b',64),null,null);
+select public.auth_provision('10000000-0000-0000-0000-000000000003','leader-b@internal.invalid','Leader B','Band B',null,repeat('c',64),repeat('d',64));
+select public.auth_provision('10000000-0000-0000-0000-000000000004','member-b@internal.invalid','Member B',null,repeat('d',64),null,null);
+select pg_temp.assert_true((select band_role='leader' from public.profiles where nickname='Leader A'),'creator is leader of own new band') as assertion;
+select pg_temp.assert_true((select band_role='member' from public.profiles where nickname='Member A'),'invitation only creates member role') as assertion;
+select pg_temp.assert_true((select recovery_hash is null from private.account_mapping where internal_login_email='member-a@internal.invalid'),'member cannot obtain leader recovery key') as assertion;
+select pg_temp.assert_true((select count(*)=1 from public.auth_lookup(' leader a ')),'server canonical nickname lookup') as assertion;
+select pg_temp.assert_true(public.auth_invite_band(repeat('e',64)) is null,'unknown invitation rejected') as assertion;
+select pg_temp.assert_true(public.auth_take_attempt(repeat('1',64),2,900),'rate limiter permits first request') as assertion;
+select pg_temp.assert_true(public.auth_take_attempt(repeat('1',64),2,900),'rate limiter permits second request') as assertion;
+select pg_temp.assert_true(not public.auth_take_attempt(repeat('1',64),2,900),'rate limiter rejects excess request') as assertion;
+update private.auth_rate_limits set expires_at=now()-interval '1 second';
+select pg_temp.assert_true(public.auth_take_attempt(repeat('1',64),2,900),'rate limiter expires and resets window') as assertion;
+select pg_temp.expect_error($s$select public.auth_rotate_invite('10000000-0000-0000-0000-000000000002',repeat('e',64))$s$,'42501','member cannot rotate invite') as assertion;
+select pg_temp.expect_error($s$select public.auth_reset_target('10000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000004')$s$,'42501','leader cannot reset another band member') as assertion;
+select pg_temp.expect_error($s$select public.auth_reset_target('10000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001')$s$,'42501','member cannot reset leader') as assertion;
+select pg_temp.assert_true(public.auth_reset_target('10000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002')='member-a@internal.invalid','leader can reset own band member') as assertion;
+select public.auth_rotate_invite('10000000-0000-0000-0000-000000000001',repeat('e',64));
+select pg_temp.assert_true(public.auth_invite_band(repeat('b',64)) is null,'rotating invitation invalidates old code') as assertion;
+select pg_temp.assert_true(public.auth_invite_band(repeat('e',64)) is not null,'new invitation works') as assertion;
+select pg_temp.assert_true(public.auth_replace_recovery('10000000-0000-0000-0000-000000000001',repeat('a',64),repeat('f',64)),'recovery key can be consumed once') as assertion;
+select pg_temp.assert_true(not public.auth_replace_recovery('10000000-0000-0000-0000-000000000001',repeat('a',64),repeat('9',64)),'consumed recovery key cannot be reused') as assertion;
+reset role;
+insert into public.songs(id,title,artist,vocal_type,band_id) select 'band-a-song','Same title','Same artist','female',band_id from public.profiles where nickname='Leader A';
+insert into public.songs(id,title,artist,vocal_type,band_id) select 'band-b-song','Same title','Same artist','female',band_id from public.profiles where nickname='Leader B';
+insert into public.rehearsals(rehearsal_date,band_id) select '2027-01-01',id from public.bands;
+insert into public.rehearsal_songs(rehearsal_id,song_id) select r.id,s.id from public.rehearsals r join public.songs s on s.band_id=r.band_id;
+select pg_temp.assert_true((select count(*)=2 from public.songs),'same song title and artist allowed in independent bands') as assertion;
+select pg_temp.assert_true((select count(*)=2 from public.rehearsals),'same date allowed for independent bands') as assertion;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select pg_temp.assert_true((select count(*)=1 from public.bands),'member sees only own band') as assertion;
+select pg_temp.assert_true((select count(*)=2 from public.profiles),'member sees only own band profiles') as assertion;
+select pg_temp.assert_true((select count(*)=1 from public.songs),'member sees only own band songs') as assertion;
+select pg_temp.assert_true((select count(*)=1 from public.rehearsals),'member sees only own band schedules') as assertion;
+select pg_temp.assert_true((select count(*)=1 from public.rehearsal_songs),'member sees only own band rehearsal songs') as assertion;
+select pg_temp.expect_error($s$update public.profiles set band_role='leader' where nickname='Member A'$s$,'42501','client cannot promote roles') as assertion;
+select pg_temp.expect_error($s$update public.songs set band_id=gen_random_uuid() where id='band-a-song'$s$,'42501','client cannot move song to different band') as assertion;
+select pg_temp.expect_error('select * from private.band_invites','42501','invitation hashes hidden from browser') as assertion;
+select pg_temp.expect_error('select * from private.auth_rate_limits','42501','rate limit buckets hidden from browser') as assertion;
+select pg_temp.expect_error($s$select public.auth_lookup('Leader B')$s$,'42501','even authenticated leader cannot call account lookup') as assertion;
+select pg_temp.expect_error($s$select public.auth_rotate_invite('10000000-0000-0000-0000-000000000001',repeat('e',64))$s$,'42501','leader cannot bypass Edge JWT checks via direct RPC') as assertion;
+select pg_temp.expect_error($s$select public.auth_take_attempt(repeat('1',64),100,900)$s$,'42501','client cannot tamper rate limiter') as assertion;
+select pg_temp.expect_error($s$select public.toggle_vote('band-b-song',1::smallint)$s$,'23503','cannot vote on another band song') as assertion;
+select pg_temp.expect_error($s$select public.add_comment('band-b-song','cross-band')$s$,'23503','cannot comment on another band song') as assertion;
+select pg_temp.assert_true((select count(*)=0 from public.get_comments('band-b-song')),'cannot read other band comments through definer RPC') as assertion;
+select pg_temp.assert_true((select count(*)=1 from public.get_song_stats(array['band-a-song','band-b-song'])),'aggregate RPC scopes requested IDs to own band') as assertion;
+select pg_temp.expect_error($s$insert into public.rehearsal_songs(rehearsal_id,song_id) select id,'band-b-song' from public.rehearsals limit 1$s$,'23514','cannot mix songs and schedules across bands') as assertion;
+select pg_temp.expect_error($s$insert into public.rehearsal_sessions(rehearsal_song_id,session_type,member_id,nickname_snapshot) select id,'vocal','10000000-0000-0000-0000-000000000004','x' from public.rehearsal_songs limit 1$s$,'23514','cannot assign another band member or leak nickname through trigger') as assertion;
+reset role;
+select pg_temp.assert_true(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'auth_%' and (has_function_privilege('anon',p.oid,'EXECUTE') or has_function_privilege('authenticated',p.oid,'EXECUTE'))),'all auth RPCs are server-only') as assertion;
+select pg_temp.assert_true((select count(*)=11 from pg_tables where schemaname in ('public','private') and tablename in ('bands','profiles','songs','rehearsals','rehearsal_songs','rehearsal_sessions','votes','comments','account_mapping','band_invites','auth_rate_limits') and rowsecurity),'all 11 app tables have RLS') as assertion;

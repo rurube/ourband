@@ -1,8 +1,9 @@
 -- Non-mutating post-deployment check. Run with supabase db query --remote --read-only --file supabase/verify.sql.
 select
   (select count(*) from pg_tables where rowsecurity and
-    ((schemaname = 'public' and tablename in ('profiles','songs','rehearsals','rehearsal_songs','rehearsal_sessions'))
-      or (schemaname = 'private' and tablename in ('account_mapping','votes','comments')))) as rls_table_count,
+    ((schemaname = 'public' and tablename in ('profiles','songs','rehearsals','rehearsal_songs','rehearsal_sessions','bands'))
+      or (schemaname = 'private' and tablename in ('account_mapping','votes','comments','band_invites','auth_rate_limits')))) as rls_table_count,
+  (select count(*) from public.bands) as bands,
   (select count(*) from public.profiles) as profiles,
   (select count(*) from public.songs) as songs,
   (select count(*) from public.rehearsals) as rehearsals,

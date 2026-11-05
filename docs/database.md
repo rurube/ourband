@@ -1,6 +1,6 @@
 # Phase 2 — 데이터베이스와 권한
 
-현재 구현은 단일 밴드용입니다. 프런트엔드는 Phase 1 미리보기 상태이고 실제 로그인 및 화면 조회는 연결하지 않습니다.
+이 문서는 **Phase 2 당시의 단일 밴드 설계와 검증 기록**입니다. Phase 3의 밴드 분리·인증 변경은 [인증 가이드](authentication.md)를 기준으로 확인하세요. 아래의 “Phase 3에서 구현 예정” 표현은 Phase 2 시점의 기록입니다.
 
 대상 프로젝트: `mspbmvjowvwtcwlporqa`  
 Project URL: `https://mspbmvjowvwtcwlporqa.supabase.co`

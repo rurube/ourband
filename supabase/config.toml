@@ -23,3 +23,7 @@ port = 54323
 enabled = true
 site_url = "http://localhost:5173"
 enable_signup = false
+
+[functions.band-auth]
+enabled = true
+verify_jwt = false

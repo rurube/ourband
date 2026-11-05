@@ -24,13 +24,17 @@ try {
     await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'))
     console.log(`PASS migration: ${name}`)
   }
-  await db.exec('begin')
-  const results = await db.exec(await readFile('supabase/tests/assertions.sql', 'utf8'))
-  const assertions = results.flatMap(result => result.rows).filter(row => row.assertion)
-  for (const row of assertions) console.log(`PASS: ${row.assertion}`)
-  if (assertions.length < 50) throw new Error('Database assertion suite did not run completely')
-  await db.exec('rollback')
-  console.log(`\n${assertions.length} PostgreSQL integrity / permission / RLS assertions passed.`)
+  let total = 0
+  for (const suite of ['assertions.sql', 'band-auth.sql']) {
+    await db.exec('begin')
+    const results = await db.exec(await readFile(`supabase/tests/${suite}`, 'utf8'))
+    const assertions = results.flatMap(result => result.rows).filter(row => row.assertion)
+    for (const row of assertions) console.log(`PASS: ${row.assertion}`)
+    if (assertions.length < (suite === 'assertions.sql' ? 90 : 35)) throw new Error('Database assertion suite did not run completely')
+    await db.exec('rollback')
+    total += assertions.length
+  }
+  console.log(`\n${total} PostgreSQL integrity / permission / RLS assertions passed.`)
   console.log('Limit: Auth/REST/Realtime services and hosted Supabase are not exercised by PGlite.')
 } catch (error) {
   // Avoid dumping SQL bodies, query data or connection secrets in CI logs.
