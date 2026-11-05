@@ -10,6 +10,7 @@ export const songKeys = {
 }
 export interface CatalogFilters { search: string; vocal: VocalType | null; sort: SongSort; confirmed: boolean; page: number }
 export const pageSize = 20
+export const recentSongLimit = 10
 export class SongConflictError extends Error {}
 interface ApiError { code?: string; message?: string }
 function fail(error: ApiError): never {
@@ -36,7 +37,7 @@ export async function fetchCatalog(bandId: string, filters: CatalogFilters, sign
 }
 export async function fetchRecentSongs(bandId: string, signal?: AbortSignal): Promise<Song[]> {
   const { data, error } = await client().from('songs').select(columns).eq('band_id', bandId)
-    .order('created_at', { ascending: false }).order('id').limit(5).setHeader('x-band-id', bandId).abortSignal(timeout(signal))
+    .order('created_at', { ascending: false }).order('id').limit(recentSongLimit).setHeader('x-band-id', bandId).abortSignal(timeout(signal))
   if (error) fail(error)
   return data as Song[]
 }

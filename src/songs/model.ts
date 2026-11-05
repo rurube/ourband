@@ -11,7 +11,7 @@ export interface Song {
   youtube_url: string | null; notes: string; is_confirmed: boolean; created_at: string; updated_at: string
 }
 export interface CatalogSong extends Song { likes: number; dislikes: number }
-export interface SongCatalog { songs: CatalogSong[]; total: number; confirmed_total: number }
+export interface SongCatalog { songs: CatalogSong[]; total: number; confirmed_total: number; legacy_vote_total?: number }
 export interface SongDraft { title: string; artist: string; bpm: string; vocal_type: VocalType | ''; youtube_url: string; notes: string }
 export interface SongPayload { title: string; artist: string; bpm: number | null; vocal_type: VocalType; youtube_url: string | null; notes: string }
 export type SongField = keyof SongDraft

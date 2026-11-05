@@ -45,6 +45,7 @@ try {
   await suite('standalone-signup.sql', 21)
   await suite('song-engagement.sql', 26)
   await suite('rehearsals.sql', 41)
+  await suite('legacy-votes.sql', 15)
   console.log(`\n${total} PostgreSQL historical / migration preservation / current membership assertions passed.`)
   console.log('Limit: Auth/REST/Realtime services and hosted Supabase are not exercised by PGlite.')
 } catch (error) {

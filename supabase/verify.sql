@@ -2,7 +2,7 @@
 select
   (select count(*) from pg_tables where rowsecurity and
     ((schemaname = 'public' and tablename in ('profiles','songs','rehearsals','rehearsal_songs','rehearsal_sessions','bands','band_memberships'))
-      or (schemaname = 'private' and tablename in ('account_mapping','votes','comments','band_invites','auth_rate_limits','pin_reset_requests')))) as rls_table_count,
+      or (schemaname = 'private' and tablename in ('account_mapping','votes','comments','band_invites','auth_rate_limits','pin_reset_requests','legacy_song_votes')))) as rls_table_count,
   (select count(*) from public.bands) as bands,
   (select count(*) from public.band_memberships) as memberships,
   (select count(*) from public.profiles) as profiles,
@@ -15,4 +15,4 @@ select
   (select count(*) from private.account_mapping) as account_mappings,
   (select count(*) from auth.users) as auth_users,
   (select count(*) from pg_publication_tables where schemaname='private'
-    and tablename in ('votes','comments','account_mapping','pin_reset_requests')) as private_realtime_table_count;
+    and tablename in ('votes','comments','account_mapping','pin_reset_requests','legacy_song_votes')) as private_realtime_table_count;

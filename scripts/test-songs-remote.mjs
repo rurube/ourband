@@ -63,7 +63,7 @@ try {
   const cross = await b.client.from('songs').update({title:'cross band'}).eq('id',first.data.id).select('id'); assert.ifError(cross.error); assert.equal(cross.data.length,0); pass('other band cannot edit song by guessed ID')
   assert.ifError((await admin.from('songs').update({is_confirmed:true}).eq('id',second.data.id)).error)
   data = await catalog(a); assert.equal(data.total,1); assert.equal(data.confirmed_total,1); assert.equal((await catalog(a,{p_confirmed:true})).songs[0].id,second.data.id); pass('confirmed songs excluded from wishlist and retained in separate catalog')
-  const recent = await a.client.from('songs').select('id,title,artist,created_at,is_confirmed').eq('band_id',a.bandId).order('created_at',{ascending:false}).limit(5); assert.ifError(recent.error); assert.equal(recent.data.length,2); pass('recent songs query includes confirmation and registration metadata')
+  const recent = await a.client.from('songs').select('id,title,artist,created_at,is_confirmed').eq('band_id',a.bandId).order('created_at',{ascending:false}).limit(10); assert.ifError(recent.error); assert.equal(recent.data.length,2); pass('recent songs query includes confirmation and registration metadata')
   const anonymous = client(key); assert.ok((await anonymous.rpc('list_song_catalog')).error); pass('anonymous cannot access song catalog')
   console.log(`Remote song integration: ${checks} checks passed.`)
 } finally {
