@@ -33,15 +33,3 @@ export function validateRehearsal(date: string, tracks: TrackDraft[]) {
 export function formatRehearsalDate(date: string) {
   return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', timeZone: 'Asia/Seoul' }).format(new Date(`${date}T00:00:00+09:00`))
 }
-
-// Patch only this song's sessions into a fresh aggregate. Unrelated edits to
-// dates, notes, ordering and other songs must never be overwritten by inline UI.
-export class SessionConflictError extends Error {}
-export function withUpdatedSessions(base: Rehearsal, latest: Rehearsal, songId: string, sessions: TrackDraft['sessions']): TrackDraft[] {
-  const before = base.tracks.find(track => track.song_id === songId)
-  const current = latest.tracks.find(track => track.song_id === songId)
-  if (base.id !== latest.id || !before || !current || before.id !== current.id) throw new SessionConflictError('이 합주곡이 변경되거나 삭제됐습니다. 최신 일정을 확인해주세요.')
-  const signature = (items: Assignment[]) => JSON.stringify(items.map(s => [s.id ?? null,s.session_type,s.member_id,s.nickname_snapshot]))
-  if (signature(before.sessions) !== signature(current.sessions)) throw new SessionConflictError('다른 멤버가 이 곡의 세션을 먼저 변경했습니다. 입력은 유지했으니 저장된 배정을 확인해주세요.')
-  return draftsFromRehearsal(latest).map(track => track.song_id === songId ? {...track,sessions:sessions.map(s=>({...s}))} : track)
-}
