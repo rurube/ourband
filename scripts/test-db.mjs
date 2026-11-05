@@ -37,8 +37,13 @@ try {
       for (const [file, minimum] of [['assertions.sql',90],['band-auth.sql',35],['song-catalog.sql',25]]) await suite(file, minimum)
       await db.exec(await readFile('supabase/test-support/account-migration-before.sql','utf8'))
     }
+    if (name === '20261105100000_five_session_types.sql') await db.exec(await readFile('supabase/test-support/five-sessions-before.sql','utf8'))
     await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'))
     console.log(`PASS migration: ${name}`)
+    if (name === '20261105100000_five_session_types.sql') {
+      await suite('five-sessions-after.sql', 6)
+      await db.exec("delete from public.rehearsals where id='a0000000-0000-0000-0000-000000000002'; delete from public.songs where id='five_session_song'; delete from auth.users where id='a0000000-0000-0000-0000-000000000001'; delete from public.bands where name='Five migration';")
+    }
   }
   await suite('account-migration-after.sql', 7)
   await suite('memberships.sql', 40)

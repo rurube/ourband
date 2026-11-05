@@ -1,6 +1,6 @@
 export const sessionTypes = [
-  { value: 'vocal', label: '보컬' }, { value: 'guitar1', label: '기타 1' }, { value: 'guitar2', label: '기타 2' },
-  { value: 'bass', label: '베이스' }, { value: 'drums', label: '드럼' }, { value: 'keyboard', label: '건반' }, { value: 'other', label: '기타 세션' },
+  { value: 'vocal', label: '보컬' }, { value: 'guitar', label: '기타' },
+  { value: 'bass', label: '베이스' }, { value: 'drums', label: '드럼' }, { value: 'keyboard', label: '건반' },
 ] as const
 export type SessionType = typeof sessionTypes[number]['value']
 export interface Assignment { id?: string; session_type: SessionType; member_id: string | null; nickname_snapshot: string }

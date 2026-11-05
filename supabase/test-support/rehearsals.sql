@@ -16,7 +16,7 @@ insert into private.comments(song_id,user_id,content) values('p6_song1','7000000
 reset role;
 set local request.jwt.claim.sub='70000000-0000-0000-0000-000000000002';
 set local role authenticated;
-select set_config('qa.p6id',public.save_rehearsal('2098-01-01','[{"song_id":"p6_song1","notes":"곡별 메모","sessions":[{"session_type":"vocal","member_id":"70000000-0000-0000-0000-000000000001","nickname_snapshot":"위조 이름"},{"session_type":"vocal","member_id":"70000000-0000-0000-0000-000000000002","nickname_snapshot":"위조 이름"},{"session_type":"guitar1","member_id":null,"nickname_snapshot":"게스트"}]},{"song_id":"p6_song2","notes":"","sessions":[]}]')::text,true);
+select set_config('qa.p6id',public.save_rehearsal('2098-01-01','[{"song_id":"p6_song1","notes":"곡별 메모","sessions":[{"session_type":"vocal","member_id":"70000000-0000-0000-0000-000000000001","nickname_snapshot":"위조 이름"},{"session_type":"vocal","member_id":"70000000-0000-0000-0000-000000000002","nickname_snapshot":"위조 이름"},{"session_type":"guitar","member_id":null,"nickname_snapshot":"게스트"}]},{"song_id":"p6_song2","notes":"","sessions":[]}]')::text,true);
 select pg_temp.assert_true((public.get_rehearsal_detail(current_setting('qa.p6id')::uuid)->>'rehearsal_date')='2098-01-01','ordinary member can create rehearsal aggregate') as assertion;
 select pg_temp.assert_true(jsonb_array_length(public.get_rehearsal_detail(current_setting('qa.p6id')::uuid)->'tracks')=2,'date supports multiple songs') as assertion;
 select pg_temp.assert_true(jsonb_array_length(public.get_rehearsal_detail(current_setting('qa.p6id')::uuid)->'tracks'->0->'sessions')=3,'same session supports multiple members plus guest assignment') as assertion;

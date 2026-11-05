@@ -15,7 +15,7 @@ Deno.test('wire payload preserves assignment identity and snapshots while omitti
   assert(!('title' in saved)&&!('key' in saved.sessions[0])&&!('rehearsal_count' in saved),'display data excluded')
 })
 Deno.test('same session supports multiple people and same person in different session types',()=>{
-  const sessions=[{key:'a',session_type:'vocal' as const,member_id:'a',nickname_snapshot:'A'},{key:'b',session_type:'vocal' as const,member_id:'b',nickname_snapshot:'B'},{key:'c',session_type:'guitar1' as const,member_id:'a',nickname_snapshot:'A'},{key:'d',session_type:'vocal' as const,member_id:null,nickname_snapshot:' 게스트 '}]
+  const sessions=[{key:'a',session_type:'vocal' as const,member_id:'a',nickname_snapshot:'A'},{key:'b',session_type:'vocal' as const,member_id:'b',nickname_snapshot:'B'},{key:'c',session_type:'guitar' as const,member_id:'a',nickname_snapshot:'A'},{key:'d',session_type:'vocal' as const,member_id:null,nickname_snapshot:' 게스트 '}]
   assert(validateRehearsal('2030-01-01',[{...track,sessions}])[0].sessions[3].nickname_snapshot==='게스트','guest trim')
   rejects('2030-01-01',[{...track,sessions:[sessions[0],{...sessions[0],key:'e'}]}])
   rejects('2030-01-01',[{...track,sessions:[{...sessions[3],nickname_snapshot:' \t\n'}]}])
@@ -24,7 +24,7 @@ Deno.test('song duplicates and Unicode limits are enforced without truncating us
   rejects('2030-01-01',[track,{...track}])
   assert(validateRehearsal('2030-01-01',[{...track,notes:'🎵'.repeat(3000)}])[0].notes.length===6000,'Unicode notes limit')
   rejects('2030-01-01',[{...track,notes:'가'.repeat(3001)}])
-  rejects('2030-01-01',[{...track,sessions:[{key:'a',session_type:'other',member_id:null,nickname_snapshot:'🎵'.repeat(31)}]}])
+  rejects('2030-01-01',[{...track,sessions:[{key:'a',session_type:'keyboard',member_id:null,nickname_snapshot:'🎵'.repeat(31)}]}])
 })
 
 const inlineBase:Rehearsal={id:'rehearsal',rehearsal_date:'2030-01-01',updated_at:'v1',tracks:[{id:'a',song_id:'a',title:'A',artist:'Artist',youtube_url:null,notes:'old note',rehearsal_count:0,sessions:[{id:'vocal-a',session_type:'vocal',member_id:'member-a',nickname_snapshot:'A'}]},{id:'b',song_id:'b',title:'B',artist:'Artist',youtube_url:null,notes:'B note',rehearsal_count:0,sessions:[]}]}

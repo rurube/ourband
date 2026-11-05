@@ -30,7 +30,7 @@ try{
  const get=(id,client=m,band=bandA)=>result(scoped(client,band,'get_rehearsal_detail',{p_id:id}))
  const save=(date,tracks,original=null,client=m,band=bandA)=>scoped(client,band,'save_rehearsal',{p_date:date,p_tracks:tracks,p_id:original?.id??null,p_expected:original?.updated_at??null})
  const remove=(r,client=m,band=bandA)=>scoped(client,band,'delete_rehearsal',{p_id:r.id,p_expected:r.updated_at})
- const tracks=[{song_id:songA.id,notes:'보컬 인트로 메모',sessions:[{session_type:'vocal',member_id:users[0],nickname_snapshot:'forged'},{session_type:'vocal',member_id:users[1],nickname_snapshot:'forged'},{session_type:'guitar1',member_id:null,nickname_snapshot:'게스트 기타'},{session_type:'guitar2',member_id:users[0],nickname_snapshot:'forged'}]},{song_id:songB.id,notes:'',sessions:[]}]
+ const tracks=[{song_id:songA.id,notes:'보컬 인트로 메모',sessions:[{session_type:'vocal',member_id:users[0],nickname_snapshot:'forged'},{session_type:'vocal',member_id:users[1],nickname_snapshot:'forged'},{session_type:'guitar',member_id:null,nickname_snapshot:'게스트 기타'},{session_type:'guitar',member_id:users[0],nickname_snapshot:'forged'}]},{song_id:songB.id,notes:'',sessions:[]}]
  const id=await result(save('2098-02-01',tracks));let current=await get(id)
  check(current.tracks.length===2,'ordinary member creates date with multiple songs atomically')
  check(current.tracks[0].sessions.length===4,'multiple vocalists, guest and same member in another role supported')
