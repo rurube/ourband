@@ -4,7 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
 export interface Account { id: string; login_id: string }
-export interface Profile { user_id: string; nickname: string; band_id: string; band_role: 'leader' | 'member'; bandName: string }
+export interface Profile { user_id: string; nickname: string; band_id: string; band_role: 'leader' | 'member'; bandName: string; available_sessions: string[]; main_session: string | null }
 interface Identity { account: Account; memberships: Profile[] }
 interface AuthContextValue {
   session: Session | null; account: Account | null; memberships: Profile[]; profile: Profile | null
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const abort = AbortSignal.any([signal, AbortSignal.timeout(20_000)])
       const { data: account, error } = await supabase.from('profiles').select('id,login_id').eq('id', userId).abortSignal(abort).single()
       if (error || !account) throw new Error('계정 정보를 불러오지 못했습니다. 다시 시도하거나 로그인해주세요.')
-      const { data, error: membershipError } = await supabase.from('band_memberships').select('user_id,band_id,nickname,band_role,bands(name)').eq('user_id', userId).order('created_at').order('band_id').abortSignal(abort)
+      const { data, error: membershipError } = await supabase.from('band_memberships').select('user_id,band_id,nickname,band_role,available_sessions,main_session,bands(name)').eq('user_id', userId).order('created_at').order('band_id').abortSignal(abort)
       if (membershipError || !data) throw new Error('가입한 밴드를 불러오지 못했습니다.')
       type Row = Omit<Profile, 'bandName'> & { bands: { name: string } | null }
       const memberships = (data as unknown as Row[]).map(({ bands, ...row }) => ({ ...row, bandName: bands?.name ?? '이름 없는 밴드' }))

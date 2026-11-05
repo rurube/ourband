@@ -7,7 +7,7 @@ export const rehearsalKeys = {
   detail: (band: string, id: string) => ['rehearsals', band, 'detail', id] as const,
   members: (band: string) => ['rehearsals', band, 'members'] as const,
 }
-export interface BandMember { user_id: string; nickname: string }
+export interface BandMember { user_id: string; nickname: string; available_sessions: string[]; main_session: string | null }
 export interface RehearsalDate { id: string; rehearsal_date: string; updated_at: string }
 export const rehearsalPageSize = 6
 export class RehearsalConflictError extends Error {}
@@ -33,7 +33,7 @@ export async function fetchRehearsal(band: string, id: string, signal?: AbortSig
   return data as Rehearsal
 }
 export async function fetchMembers(band: string, signal?: AbortSignal): Promise<BandMember[]> {
-  const { data, error } = await client().from('band_memberships').select('user_id,nickname').eq('band_id', band).order('nickname').setHeader('x-band-id', band).abortSignal(timeout(signal))
+  const { data, error } = await client().from('band_memberships').select('user_id,nickname,available_sessions,main_session').eq('band_id', band).order('nickname').setHeader('x-band-id', band).abortSignal(timeout(signal))
   if (error) fail(error)
   return data as BandMember[]
 }

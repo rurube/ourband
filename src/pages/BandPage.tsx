@@ -3,9 +3,11 @@ import { KeyRound, Plus, RefreshCw, ShieldCheck, Users, UserRound } from 'lucide
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../auth/AuthProvider'
 import { authRequest, type AuthAction } from '../auth/api'
+import { SessionSettings } from '../members/SessionSettings'
+import { sessionTypes } from '../rehearsals/model'
 import { supabase } from '../lib/supabase'
 
-interface Member { user_id: string; nickname: string; band_role: 'leader' | 'member' }
+interface Member { user_id: string; nickname: string; band_role: 'leader' | 'member'; available_sessions: string[]; main_session: string | null }
 interface ResetRequest { user_id: string; expires_at: string }
 export function BandPage() {
   const { account, profile, memberships, selectBand, refreshIdentity } = useAuth()
@@ -21,7 +23,7 @@ export function BandPage() {
     queryKey: ['band-members', bandId], enabled: !!bandId,
     queryFn: async (): Promise<Member[]> => {
       if (!supabase || !bandId) throw new Error('밴드를 선택해주세요.')
-      const { data, error } = await supabase.from('band_memberships').select('user_id,nickname,band_role').eq('band_id', bandId).order('created_at').setHeader('x-band-id', bandId).abortSignal(AbortSignal.timeout(20_000))
+      const { data, error } = await supabase.from('band_memberships').select('user_id,nickname,band_role,available_sessions,main_session').eq('band_id', bandId).order('created_at').setHeader('x-band-id', bandId).abortSignal(AbortSignal.timeout(20_000))
       if (error) throw new Error('멤버 목록을 불러오지 못했습니다.')
       return data as Member[]
     },
@@ -140,10 +142,10 @@ export function BandPage() {
       </div>
     </div>
     {profile && <div className="band-grid" key={bandId}>
-      <section className="panel band-panel"><h2>{profile.bandName} · 멤버</h2><p>{profile.nickname} · {profile.band_role === 'leader' ? '리더' : '멤버'}</p>
+      <div><SessionSettings key={`${profile.user_id}:${bandId}`} profile={profile}/><section className="panel band-panel"><h2>{profile.bandName} · 멤버</h2><p>{profile.nickname} · {profile.band_role === 'leader' ? '리더' : '멤버'}</p>
         <form onSubmit={e => { void rename(e) }}><fieldset disabled={busy}><label htmlFor="myBandNickname">이 밴드의 내 닉네임</label><input id="myBandNickname" name="nickname" defaultValue={profile.nickname} maxLength={30} required /><button className="secondary-button" type="submit">밴드 닉네임 변경</button></fieldset></form>
-        {members.isPending ? <p role="status">멤버를 불러오고 있어요…</p> : members.error ? <><p role="alert">{members.error.message}</p><button className="text-button" onClick={() => { void members.refetch() }}>다시 시도</button></> : <ul className="member-list">{members.data.map(member => <li key={member.user_id}><span>{member.nickname}</span><span className="preview-badge">{member.band_role === 'leader' ? '리더' : '멤버'}</span></li>)}</ul>}
-      </section>
+        {members.isPending ? <p role="status">멤버를 불러오고 있어요…</p> : members.error ? <><p role="alert">{members.error.message}</p><button className="text-button" onClick={() => { void members.refetch() }}>다시 시도</button></> : <ul className="member-list">{members.data.map(member => <li key={member.user_id}><div className="member-positions"><strong>{member.nickname}</strong><div>{member.available_sessions.length?sessionTypes.filter(type=>member.available_sessions.includes(type.value)).map(type=><span className={member.main_session===type.value?'position-tag main':'position-tag'} key={type.value}>{member.main_session===type.value?'메인 · ':''}{type.label}</span>):<span className="position-unset">포지션 미설정</span>}</div></div><span className="preview-badge">{member.band_role === 'leader' ? '리더' : '멤버'}</span></li>)}</ul>}
+      </section></div>
       <div>
         {profile.band_role === 'leader' ? <>
           <section className="panel band-panel"><h2><ShieldCheck size={20} />리더 넘기기</h2><p>이 밴드의 멤버에게 리더 권한을 넘깁니다. 나는 멤버로 전환되며, 다시 리더가 되려면 새 리더가 넘겨줘야 합니다.</p>
