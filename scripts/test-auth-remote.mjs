@@ -43,6 +43,12 @@ try{
  const a=await login(idA), b=await login(idB), m=await login(idM)
  const bandA=a.memberships[0].band_id, bandB=b.memberships[0].band_id
  assert.notEqual(bandA,bandB);pass('identical nicknames allowed in different bands')
+ const rename=await a.client.rpc('rename_band',{p_band_id:bandA,p_name:` QA renamed ${nonce} `});assert.ifError(rename.error)
+ const renamedBand=await m.client.from('bands').select('name').eq('id',bandA).single();assert.ifError(renamedBand.error);assert.equal(renamedBand.data.name,`QA renamed ${nonce}`);pass('leader renames band and member reads updated name')
+ assert.equal((await m.client.rpc('rename_band',{p_band_id:bandA,p_name:'forbidden'})).error?.code,'42501');pass('member cannot rename band')
+ assert.equal((await a.client.rpc('rename_band',{p_band_id:bandB,p_name:'forbidden'})).error?.code,'42501');pass('leader cannot rename another band')
+ assert.equal((await a.client.rpc('rename_band',{p_band_id:bandA,p_name:'   '})).error?.code,'22023');pass('blank band name rejected remotely')
+
  const join=ok(await call('join-band',{nickname:'B에서의 별명',bandCode:createdB.bandCode},a.token),'existing account joins second band without new Auth user')
  assert.equal(join.bandId,bandB)
  const create=ok(await call('create-band',{nickname:'새 밴드 리더',bandName:`QA accounts ${nonce} C`},a.token),'existing account creates additional band as leader');bands.add(create.bandId)

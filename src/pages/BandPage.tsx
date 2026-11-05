@@ -13,7 +13,7 @@ export function BandPage() {
   const running = useRef(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [code, setCode] = useState<{ value: string; bandName: string } | null>(null)
+  const [code, setCode] = useState<{ value: string; bandName: string; bandId?: string } | null>(null)
   const [recovery, setRecovery] = useState('')
   const queryClient = useQueryClient()
   const bandId = profile?.band_id
@@ -51,7 +51,7 @@ export function BandPage() {
     const currentBandId = bandId
     await run(async () => {
       const result = await authRequest(action, { ...input, ...(currentBandId ? { bandId: currentBandId } : {}) })
-      if (result.bandCode) setCode({ value: result.bandCode, bandName: input.bandName || currentBandName })
+      if (result.bandCode) setCode({ value: result.bandCode, bandName: input.bandName || currentBandName, bandId: result.bandId || currentBandId })
       if (result.recoveryKey) setRecovery(result.recoveryKey)
       // Never discard a one-time response even if a subsequent read fails.
       if (action === 'create-band' || action === 'join-band') {
@@ -80,6 +80,20 @@ export function BandPage() {
       setMessage('이 밴드의 닉네임을 변경했습니다. 로그인 아이디와 다른 밴드 닉네임은 유지됩니다.')
       void queryClient.invalidateQueries({ queryKey: ['band-members', targetBand] })
       try { await refreshIdentity() } catch { setError('닉네임 변경은 완료했습니다. 계정 정보를 새로고침해주세요.') }
+    })
+  }
+  async function renameBand(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const input = values(event.currentTarget); const targetBand = bandId
+    await run(async () => {
+      if (!supabase || !targetBand) throw new Error('밴드를 선택해주세요.')
+      const name = input.bandName.trim()
+      if (!name || name.length > 60 || /[\p{Cc}\p{Cf}]/u.test(name)) throw new Error('밴드 이름을 1~60자로 입력해주세요.')
+      const { error } = await supabase.rpc('rename_band', { p_band_id: targetBand, p_name: name }).setHeader('x-band-id', targetBand)
+      if (error) throw new Error(error.code === '42501' ? '이 밴드의 리더만 이름을 변경할 수 있습니다.' : '밴드 이름을 변경하지 못했습니다.')
+      setCode(previous => previous?.bandId === targetBand ? { ...previous, bandName: name } : previous)
+      setMessage('밴드 이름을 변경했습니다.')
+      try { await refreshIdentity() } catch { setError('이름 변경은 완료했습니다. 계정·밴드 목록을 새로고침해주세요.') }
     })
   }
   async function resetApproval(request: boolean) {
@@ -118,7 +132,8 @@ export function BandPage() {
       </section>
       <div>
         {profile.band_role === 'leader' ? <>
-          <section className="panel band-panel"><h2><ShieldCheck size={20} />이 밴드의 초대 코드</h2><p>새 코드를 발급하면 이 밴드의 이전 코드가 폐기됩니다.</p><button className="primary-button" disabled={busy} onClick={() => { const selectedBand=profile; void run(async () => { const result=await authRequest('rotate-invite',{bandId:selectedBand.band_id}); setCode({value:result.bandCode ?? '',bandName:selectedBand.bandName}); setMessage('이 밴드의 새 초대 코드를 발급했습니다.') }) }}><RefreshCw size={16} />새 초대 코드 발급</button></section>
+          <section className="panel band-panel"><h2>밴드 이름 수정</h2><form onSubmit={e => { void renameBand(e) }}><fieldset disabled={busy}><label htmlFor="editBandName">밴드 이름</label><input key={`${bandId}:${profile.bandName}`} id="editBandName" name="bandName" defaultValue={profile.bandName} maxLength={60} required /><button type="submit" className="primary-button">밴드 이름 저장</button></fieldset></form></section>
+          <section className="panel band-panel"><h2><ShieldCheck size={20} />이 밴드의 초대 코드</h2><p>새 코드를 발급하면 이 밴드의 이전 코드가 폐기됩니다.</p><button className="primary-button" disabled={busy} onClick={() => { const selectedBand=profile; void run(async () => { const result=await authRequest('rotate-invite',{bandId:selectedBand.band_id}); setCode({value:result.bandCode ?? '',bandName:selectedBand.bandName,bandId:selectedBand.band_id}); setMessage('이 밴드의 새 초대 코드를 발급했습니다.') }) }}><RefreshCw size={16} />새 초대 코드 발급</button></section>
           <section className="panel band-panel"><h2><KeyRound size={20} />동의한 구성원 PIN 초기화</h2><p>구성원이 아래 동의를 요청한 경우에만 15분 동안 한 번 초기화할 수 있어요. 계정의 모든 밴드 로그인에 적용됩니다.</p><button className="text-button" disabled={busy || requests.isFetching} onClick={() => { void requests.refetch() }}>초기화 요청 새로고침</button>{requests.error && <p role="alert">{requests.error.message}</p>}
             <form onSubmit={e => { void edgeForm(e, 'reset-member-pin') }}><fieldset disabled={busy}><label htmlFor="resetMember">동의한 구성원</label><select id="resetMember" name="memberId" defaultValue="" required><option value="" disabled>초기화 요청을 선택해주세요</option>{eligibleMembers.map(member => <option value={member.user_id} key={member.user_id}>{member.nickname}</option>)}</select><label htmlFor="leaderPin">리더의 현재 공통 PIN</label><input id="leaderPin" name="currentPin" type="password" inputMode="numeric" pattern="[0-9]{6,12}" minLength={6} maxLength={12} autoComplete="current-password" required /><label htmlFor="resetNewPin">구성원의 새 공통 PIN</label><input id="resetNewPin" name="pin" type="password" inputMode="numeric" pattern="[0-9]{6,12}" minLength={6} maxLength={12} autoComplete="new-password" required /><button className="primary-button" disabled={!eligibleMembers.length} type="submit">동의 확인 후 PIN 초기화</button></fieldset></form>
           </section>

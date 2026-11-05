@@ -83,7 +83,7 @@ npm run check:edge
 npm run build
 ```
 
-- DB 검증 **224개**: 이전 스키마 회귀 160개, 실제 데이터가 있는 마이그레이션 보존 7개, 현재 계정/다중 소속/권한 50개, 밴드 없는 가입 7개
+- DB 검증 **230개**: 이전 스키마 회귀 160개, 실제 데이터가 있는 마이그레이션 보존 7개, 현재 계정/다중 소속/권한 50개, 밴드 없는 가입 7개, 밴드명 수정 권한·입력 6개
 - 보안 유틸리티 7개, 희망곡 입력 검증 6개, Edge 타입 검사와 프런트 빌드 통과
 - 실제 Auth/REST 다중 밴드 검증 **43개**, 희망곡 회귀 **22개** 통과
 - 전환 전에 실제로 만든 QA 계정이 같은 초기 아이디·PIN·Auth UUID·닉네임으로 전환 후 로그인되는 것을 확인
@@ -99,3 +99,5 @@ npx supabase test db supabase/tests/database/memberships.test.sql
 실제 운영 DB에서 테스트 fixture SQL을 직접 실행하지 않습니다. 후속 배포의 읽기 전용 확인은 `supabase db query --remote --read-only --file supabase/verify.sql`을 사용합니다.
 
 참고: [Supabase 요청별 헤더](https://supabase.com/docs/reference/javascript/using-modifiers-setheader), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [DB 함수 보안](https://supabase.com/docs/guides/database/functions).
+
+밴드 리더는 밴드 화면의 **밴드 이름 수정**에서 현재 밴드명을 1~60자로 변경할 수 있습니다. 서버의 `rename_band` 함수가 실제 리더 소속을 확인하며, 멤버·비회원의 수정은 차단합니다. 이름을 바꿔도 초대 코드와 밴드 ID·곡·합주는 유지됩니다.
