@@ -58,6 +58,7 @@ export function SongDetail({ bandId, id, onClose, onEdit, onStatus }: { bandId: 
   }, [])
   return <dialog ref={dialog} className="song-dialog song-detail-dialog" aria-labelledby="song-detail-heading" onCancel={event => { event.preventDefault(); onClose() }}>
     <div className="song-dialog-heading"><h2 id="song-detail-heading">곡 상세</h2><button type="button" className="icon-button" aria-label="곡 상세 닫기" onClick={onClose}><X size={21} /></button></div>
-    {song.isPending ? <SongSkeleton /> : song.error ? <p role="alert" className="form-message error-message">{song.error.message}<button className="text-button" onClick={() => { void song.refetch() }}>다시 시도</button></p> : song.data ? <><SongCollection detail bandId={bandId} songs={[{ ...song.data, likes: 0, dislikes: 0 }]} onEdit={onEdit} onOpen={() => {}} onStatus={onStatus} /><Comments bandId={bandId} songId={id} /></> : null}
+    {song.error && <p role="alert" className="form-message error-message">{song.error.message}<button className="text-button" onClick={() => { void song.refetch() }}>다시 시도</button></p>}
+    {song.data ? <><SongCollection detail bandId={bandId} songs={[{ ...song.data, likes: 0, dislikes: 0 }]} onEdit={onEdit} onOpen={() => {}} onStatus={onStatus} /><Comments bandId={bandId} songId={id} /></> : song.isPending ? <SongSkeleton /> : null}
   </dialog>
 }
