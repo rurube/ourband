@@ -9,8 +9,8 @@ function fail(error: { code?: string }): never {
   throw new Error('요청 결과를 확인하지 못했습니다. 새로고침으로 반영 여부를 확인한 뒤 다시 시도해주세요.')
 }
 export const engagementKeys = {
-  batch: (band: string, ids: string[]) => ['songs', band, 'engagement-batch', ids] as const,
-  state: (band: string, id: string) => ['songs', band, 'engagement-state', id] as const,
+  batch: (band: string, ids: string[], userId: string) => ['songs', band, 'engagement-batch', userId, ids] as const,
+  state: (band: string, id: string, userId: string) => ['songs', band, 'engagement-state', userId, id] as const,
   comments: (band: string, id: string) => ['songs', band, 'comments', id] as const,
   popular: (band: string) => ['songs', band, 'popular'] as const,
 }

@@ -1,5 +1,6 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
+import { useAuth } from '../auth/AuthProvider'
 import { useRef } from 'react'
 import { engagementKeys, toggleVote } from './engagement-api'
 import { applyVote, voteResult, type EngagementState } from './engagement-model'
@@ -12,7 +13,8 @@ export function refreshEngagement(client: QueryClient, band: string) {
 }
 export function useVote(band: string, id: string) {
   const client = useQueryClient()
-  const key = engagementKeys.state(band, id)
+  const { session } = useAuth()
+  const key = engagementKeys.state(band, id, session!.user.id)
   const state = useQuery<EngagementState>({ queryKey: key, enabled: false })
   const pending = useIsMutating({ mutationKey: ['song-vote', band, id] }) > 0
   const running = useRef(false)

@@ -2,16 +2,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchEngagement, engagementKeys } from './engagement-api'
 import type { EngagementState } from './engagement-model'
 import type { CatalogSong } from './model'
+import { useAuth } from '../auth/AuthProvider'
 import { SongCard } from './SongCard'
 
 export function SongCollection({ bandId, songs, onEdit, onOpen, onStatus, detail = false }: { bandId: string; songs: CatalogSong[]; onEdit: (song: CatalogSong) => void; onOpen: (id: string) => void; onStatus?: (message: string) => void; detail?: boolean }) {
   const client = useQueryClient()
+  const { session } = useAuth()
+  const userId = session!.user.id
   const ids = [...new Set(songs.map(song => song.id))].sort()
   const batch = useQuery({
-    queryKey: engagementKeys.batch(bandId, ids), enabled: ids.length > 0,
+    queryKey: engagementKeys.batch(bandId, ids, userId), enabled: ids.length > 0,
     queryFn: async ({ signal }) => {
       const entries = await fetchEngagement(bandId, ids, signal)
-      for (const [id, data] of Object.entries(entries)) client.setQueryData<EngagementState>(engagementKeys.state(bandId, id), old => ({ data, ...(old?.optimistic ? { optimistic: old.optimistic } : {}) }))
+      for (const [id, data] of Object.entries(entries)) client.setQueryData<EngagementState>(engagementKeys.state(bandId, id, userId), old => ({ data, ...(old?.optimistic ? { optimistic: old.optimistic } : {}) }))
       return entries
     },
   })
