@@ -85,6 +85,14 @@ try{
  denied(await call('login',{loginId:idA,pin}),'old account ID stops working after rename')
  const newLogin=await login(renamed);assert.equal(newLogin.user.id,a.user.id);assert.equal(newLogin.memberships.length,3);pass('ID change preserves Auth UUID, memberships and PIN')
  const recovery=ok(await call('rotate-recovery',{currentPin:pin},newLogin.token),'recovery key rotation is account-wide');assert.match(recovery.recoveryKey,/^[a-f0-9]{40}$/)
+
+ const handover=await newLogin.client.rpc('transfer_band_leader',{p_band_id:bandA,p_target:m.user.id});assert.ifError(handover.error)
+ const roles=await newLogin.client.from('band_memberships').select('user_id,band_role').eq('band_id',bandA).setHeader('x-band-id',bandA);assert.ifError(roles.error);assert.equal(roles.data.find(x=>x.user_id===a.user.id).band_role,'member');assert.equal(roles.data.find(x=>x.user_id===m.user.id).band_role,'leader');pass('handover promotes member and demotes old leader atomically')
+ assert.equal((await newLogin.client.rpc('rename_band',{p_band_id:bandA,p_name:'forbidden'})).error?.code,'42501');pass('former leader immediately loses rename authority')
+ assert.equal((await newLogin.client.rpc('transfer_band_leader',{p_band_id:bandA,p_target:m.user.id})).error?.code,'42501');pass('former leader cannot replay leadership handover')
+ const leaderMember=await login(idM)
+ assert.ifError((await leaderMember.client.rpc('rename_band',{p_band_id:bandA,p_name:`QA new leader ${nonce}`})).error);pass('new leader immediately gains band management authority')
+ const otherRole=await newLogin.client.from('band_memberships').select('band_role').eq('band_id',bandB).eq('user_id',a.user.id).single();assert.ifError(otherRole.error);assert.equal(otherRole.data.band_role,'member');pass('handover leaves other band membership unchanged')
  assert.ifError((await newLogin.client.auth.signOut({scope:'local'})).error);assert.equal((await newLogin.client.auth.getSession()).data.session,null);pass('SDK logout clears session')
  console.log(`Remote account/membership integration: ${passes} checks passed.`)
 }finally{

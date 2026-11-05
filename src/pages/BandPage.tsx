@@ -96,6 +96,20 @@ export function BandPage() {
       try { await refreshIdentity() } catch { setError('이름 변경은 완료했습니다. 계정·밴드 목록을 새로고침해주세요.') }
     })
   }
+  async function transferLeader(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const input = values(event.currentTarget); const targetBand = bandId
+    const target = members.data?.find(member => member.user_id === input.memberId && member.band_role === 'member')
+    await run(async () => {
+      if (!supabase || !targetBand || !target) throw new Error('리더를 넘길 멤버를 선택해주세요.')
+      const { error } = await supabase.rpc('transfer_band_leader', { p_band_id: targetBand, p_target: target.user_id }).setHeader('x-band-id', targetBand)
+      if (error) throw new Error(error.code === '42501' ? '현재 리더만 리더를 넘길 수 있습니다.' : '리더를 넘기지 못했습니다. 멤버 목록을 새로고침해주세요.')
+      setMessage(`${target.nickname}님에게 리더를 넘겼습니다. 나는 이 밴드의 멤버로 전환되었습니다.`)
+      void queryClient.invalidateQueries({ queryKey: ['band-members', targetBand] })
+      void queryClient.invalidateQueries({ queryKey: ['reset-requests', targetBand] })
+      try { await refreshIdentity() } catch { setError('리더 변경은 완료했습니다. 계정·밴드 목록을 새로고침해주세요.') }
+    })
+  }
   async function resetApproval(request: boolean) {
     const targetBand = bandId
     await run(async () => {
@@ -132,6 +146,10 @@ export function BandPage() {
       </section>
       <div>
         {profile.band_role === 'leader' ? <>
+          <section className="panel band-panel"><h2><ShieldCheck size={20} />리더 넘기기</h2><p>이 밴드의 멤버에게 리더 권한을 넘깁니다. 나는 멤버로 전환되며, 다시 리더가 되려면 새 리더가 넘겨줘야 합니다.</p>
+            <form onSubmit={e => { void transferLeader(e) }}><fieldset disabled={busy || members.isPending || !!members.error}><label htmlFor="nextLeader">새 리더</label><select id="nextLeader" name="memberId" defaultValue="" required><option value="" disabled>멤버를 선택해주세요</option>{members.data?.filter(member => member.band_role === 'member').map(member => <option key={member.user_id} value={member.user_id}>{member.nickname}</option>)}</select><label className="consent-check"><input type="checkbox" required />선택한 멤버에게 리더를 넘기고 멤버로 전환하는 것을 확인했습니다.</label><button className="primary-button" type="submit" disabled={!members.data?.some(member => member.band_role === 'member')}>선택한 멤버에게 리더 넘기기</button></fieldset></form>
+            {members.data && !members.data.some(member => member.band_role === 'member') && <p>리더를 넘길 멤버가 없습니다. 먼저 멤버를 초대해주세요.</p>}
+          </section>
           <section className="panel band-panel"><h2>밴드 이름 수정</h2><form onSubmit={e => { void renameBand(e) }}><fieldset disabled={busy}><label htmlFor="editBandName">밴드 이름</label><input key={`${bandId}:${profile.bandName}`} id="editBandName" name="bandName" defaultValue={profile.bandName} maxLength={60} required /><button type="submit" className="primary-button">밴드 이름 저장</button></fieldset></form></section>
           <section className="panel band-panel"><h2><ShieldCheck size={20} />이 밴드의 초대 코드</h2><p>새 코드를 발급하면 이 밴드의 이전 코드가 폐기됩니다.</p><button className="primary-button" disabled={busy} onClick={() => { const selectedBand=profile; void run(async () => { const result=await authRequest('rotate-invite',{bandId:selectedBand.band_id}); setCode({value:result.bandCode ?? '',bandName:selectedBand.bandName,bandId:selectedBand.band_id}); setMessage('이 밴드의 새 초대 코드를 발급했습니다.') }) }}><RefreshCw size={16} />새 초대 코드 발급</button></section>
           <section className="panel band-panel"><h2><KeyRound size={20} />동의한 구성원 PIN 초기화</h2><p>구성원이 아래 동의를 요청한 경우에만 15분 동안 한 번 초기화할 수 있어요. 계정의 모든 밴드 로그인에 적용됩니다.</p><button className="text-button" disabled={busy || requests.isFetching} onClick={() => { void requests.refetch() }}>초기화 요청 새로고침</button>{requests.error && <p role="alert">{requests.error.message}</p>}
