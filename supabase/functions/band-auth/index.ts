@@ -41,8 +41,8 @@ Deno.serve(async req => {
     const action = text(input.action, 30)
     const ip = req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ?? 'unknown'
     await limit(`ip:${ip}`, 60, 900)
-    if (['login','signup-create-band','signup-join-band','recover'].includes(action)) {
-      const signup = action.startsWith('signup-')
+    if (['login','signup','signup-create-band','signup-join-band','recover'].includes(action)) {
+      const signup = action === 'signup' || action.startsWith('signup-')
       const id = loginId(input.loginId, signup)
       await limit(`account:${action}:${id.toLowerCase()}`, action === 'login' ? 12 : 5, 900)
       if (action !== 'login') { await limit('registration-and-recovery', 60, 3600); await limit(`signup-ip:${ip}`, 10, 3600) }
@@ -67,18 +67,20 @@ Deno.serve(async req => {
         }
         return respond({ recoveryKey })
       }
-      const name = nickname(input.nickname)
+      const accountOnly = action === 'signup'
+      const name = accountOnly ? null : nickname(input.nickname)
       const isLeader = action === 'signup-create-band'
       const bandName = isLeader ? text(input.bandName, 60) : null
       if (isLeader && !bandName) throw new HttpError(400, '밴드 이름을 입력해주세요.')
-      const inviteHash = isLeader ? null : await sha256(text(input.bandCode, 100).toLowerCase())
-      if (!isLeader && !await rpc<string|null>('auth_invite_band', { p_hash: inviteHash })) throw new HttpError(400, failure)
+      const inviteHash = isLeader || accountOnly ? null : await sha256(text(input.bandCode, 100).toLowerCase())
+      if (!isLeader && !accountOnly && !await rpc<string|null>('auth_invite_band', { p_hash: inviteHash })) throw new HttpError(400, failure)
       const recoveryKey = randomCode(); const bandCode = isLeader ? randomCode() : null
       const email = `${crypto.randomUUID()}@accounts.ourband.invalid`
       const { data, error } = await admin.auth.admin.createUser({ email, password: await derive(email, password), email_confirm: true })
       if (error || !data.user) throw new HttpError(400, failure)
       try {
-        await rpc('auth_signup', {
+        if (accountOnly) await rpc('auth_register_account', { p_user: data.user.id, p_email: email, p_login_id: id, p_recovery_hash: await sha256(recoveryKey) })
+        else await rpc('auth_signup', {
           p_user: data.user.id, p_email: email, p_login_id: id, p_nickname: name, p_band_name: bandName,
           p_invite_hash: inviteHash, p_recovery_hash: await sha256(recoveryKey), p_code_hash: bandCode ? await sha256(bandCode) : null,
         })

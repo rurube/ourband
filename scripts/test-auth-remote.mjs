@@ -34,7 +34,10 @@ try{
  if(legacyId&&legacyUser){const legacy=await login(legacyId);assert.equal(legacy.user.id,legacyUser);assert.equal(legacy.memberships[0].nickname,legacyId);pass('real pre-migration account keeps its initial ID, PIN, Auth UUID and band nickname')}
  denied(await call('rotate-invite'),'anonymous privileged action rejected')
  denied(await call('login',{loginId:idA,pin},undefined,'https://evil.invalid'),'unapproved CORS origin rejected')
- const createdA=await signup('signup-create-band',idA,{nickname:'동일 닉네임',bandName:`QA accounts ${nonce} A`})
+ await signup('signup',idA,{})
+ const alone=await login(idA);assert.equal(alone.memberships.length,0);pass('signup needs no band code or nickname and has zero memberships')
+ const blocked=await alone.client.rpc('list_song_catalog');assert.ok(blocked.error);pass('new account cannot access catalog before joining a band')
+ const createdA=ok(await call('create-band',{nickname:'동일 닉네임',bandName:`QA accounts ${nonce} A`},alone.token),'new account creates first band after login');bands.add(createdA.bandId)
  const createdB=await signup('signup-create-band',idB,{nickname:'동일 닉네임',bandName:`QA accounts ${nonce} B`})
  const joinedM=await signup('signup-join-band',idM,{nickname:'구성원',bandCode:createdA.bandCode})
  const a=await login(idA), b=await login(idB), m=await login(idM)

@@ -42,6 +42,7 @@ try {
   }
   await suite('account-migration-after.sql', 7)
   await suite('memberships.sql', 40)
+  await suite('standalone-signup.sql', 7)
   console.log(`\n${total} PostgreSQL historical / migration preservation / current membership assertions passed.`)
   console.log('Limit: Auth/REST/Realtime services and hosted Supabase are not exercised by PGlite.')
 } catch (error) {
