@@ -1,9 +1,10 @@
-import { CalendarDays, LogIn, LogOut, Music2, Sparkles, Users } from 'lucide-react'
+import { CalendarDays, Home, LogIn, LogOut, Music2, Sparkles, Users } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 
 const navigation = [
+  { to: '/home', label: '메인', icon: Home },
   { to: '/songs', label: '희망곡', icon: Music2 },
   { to: '/rehearsals', label: '합주 관리', icon: CalendarDays },
   { to: '/band', label: '우리 밴드', icon: Users },
@@ -20,7 +21,7 @@ export function Layout() {
   }
   const { pathname } = useLocation()
   useEffect(() => {
-    const title = pathname === '/songs' ? '희망곡' : pathname === '/rehearsals' ? '합주 관리' : pathname === '/band' ? '내 계정과 밴드' : '로그인'
+    const title = pathname === '/home' ? '모든 밴드의 합주' : pathname === '/songs' ? '희망곡' : pathname === '/rehearsals' ? '합주 관리' : pathname === '/band' ? '내 계정과 밴드' : '로그인'
     document.title = `${title} · 우리의 합주`
     window.scrollTo(0, 0)
   }, [pathname])
@@ -29,7 +30,7 @@ export function Layout() {
     <a href="#main" className="skip-link" onClick={event => { event.preventDefault(); document.getElementById('main')?.focus() }}>본문으로 건너뛰기</a>
     <header className="site-header">
       <div className="header-inner">
-        <NavLink to={session ? "/songs" : "/login"} className="brand" aria-label="우리의 합주 홈">
+        <NavLink to={session ? "/home" : "/login"} className="brand" aria-label="우리의 합주 홈">
           <span className="brand-icon"><Music2 size={23} /></span>
           <span>우리의 합주<small>MY BAND, OUR SOUND</small></span>
         </NavLink>
@@ -40,7 +41,7 @@ export function Layout() {
       </div>
       {session && <div className="band-switch-strip"><label htmlFor="active-band">현재 밴드</label><select id="active-band" aria-label="현재 밴드 선택" value={profile?.band_id ?? ''} onChange={e => selectBand(e.target.value)}>{!memberships.length && <option value="">참여한 밴드 없음</option>}{memberships.map(item => <option key={item.band_id} value={item.band_id}>{item.bandName} · {item.nickname} ({item.band_role === 'leader' ? '리더' : '멤버'})</option>)}</select><NavLink to="/band">밴드 추가·내 계정</NavLink></div>}
     </header>
-    <div className="phase-notice"><Sparkles size={14} /><span>Phase 4 · 우리 밴드의 희망곡 <span className="notice-detail">— 곡 등록·수정·검색을 사용할 수 있어요. 합주·투표 기능은 준비 중입니다.</span></span></div>
+    <div className="phase-notice"><Sparkles size={14} /><span>Phase 4 · 우리 밴드의 희망곡 <span className="notice-detail">— 메인에서 모든 밴드의 일정과 확정곡을 확인하세요. 일정 등록·투표 기능은 준비 중입니다.</span></span></div>
     {error && <p className="form-message error-message" role="alert">{error}</p>}
     <main id="main" className="main-container" tabIndex={-1}><Outlet /></main>
     <footer className="site-footer"><Music2 size={14} />함께 고르고, 함께 맞추고, 우리의 음악으로.</footer>

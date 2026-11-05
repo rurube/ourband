@@ -41,7 +41,7 @@ export function LoginPage() {
     finally { setBusy(false) }
   }
   if (loading) return <div className="auth-loading" role="status">로그인 정보를 확인하고 있어요…</div>
-  if (session) return <Navigate to="/band" replace />
+  if (session) return <Navigate to="/home" replace />
   return <div className="login-page">
     <section className="welcome">
       <div className="eyebrow"><span />OUR LITTLE BAND SPACE</div>
