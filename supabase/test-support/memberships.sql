@@ -64,10 +64,7 @@ select pg_temp.assert_true((select content='다중 밴드 익명 댓글' from pu
 select pg_temp.assert_true((select not(to_jsonb(c)?'user_id') from public.get_comments('members-b') c),'comments still hide account identity after migration') as assertion;
 with changed as(update public.songs set title='다른 밴드 덮어쓰기' where id='members-a' returning id)
  select pg_temp.assert_true((select count(*)=0 from changed),'selected band header prevents writes to another joined band') as assertion;
-insert into public.rehearsals(rehearsal_date) values('2028-01-01');
-insert into public.rehearsal_songs(rehearsal_id,song_id) select id,'members-b' from public.rehearsals;
-insert into public.rehearsal_sessions(rehearsal_song_id,session_type,member_id,nickname_snapshot)
- select id,'vocal',auth.uid(),'wrong alias' from public.rehearsal_songs;
+select public.save_rehearsal('2028-01-01',jsonb_build_array(jsonb_build_object('song_id','members-b','sessions',jsonb_build_array(jsonb_build_object('session_type','vocal','member_id',auth.uid(),'nickname_snapshot','wrong alias')))));
 select pg_temp.assert_true((select nickname_snapshot='다른 별명' from public.rehearsal_sessions),'session assignments capture selected band nickname rather than global login ID') as assertion;
 select pg_temp.assert_true((select likes=1 and comment_count=1 from public.get_song_stats(array['members-b'])),'song stats preserve per-account votes and comments under selected band') as assertion;
 select pg_temp.expect_error('select * from private.pin_reset_requests','42501','reset approvals hidden from direct client reads') as assertion;

@@ -11,6 +11,7 @@
     "test:db": "node scripts/test-db.mjs",
     "check:edge": "deno check supabase/functions/band-auth/index.ts",
     "test:edge": "deno test supabase/functions/_shared/security_test.ts",
+    "test:rehearsals": "deno test src/rehearsals/model_test.ts",
     "test:songs": "deno test src/songs/model_test.ts src/songs/engagement-model_test.ts"
   },
   "engines": {

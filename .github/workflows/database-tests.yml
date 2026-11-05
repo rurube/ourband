@@ -6,6 +6,7 @@ on:
       - 'supabase/**'
       - 'scripts/**'
       - 'src/songs/**'
+      - 'src/rehearsals/**'
       - 'package*.json'
       - '.github/workflows/database-tests.yml'
   pull_request:
@@ -13,6 +14,7 @@ on:
       - 'supabase/**'
       - 'scripts/**'
       - 'src/songs/**'
+      - 'src/rehearsals/**'
       - 'package*.json'
       - '.github/workflows/database-tests.yml'
 permissions:
@@ -31,4 +33,5 @@ jobs:
       - run: npm run check:edge
       - run: npm run test:edge
       - run: npm run test:songs
+      - run: npm run test:rehearsals
       - run: npm run build
