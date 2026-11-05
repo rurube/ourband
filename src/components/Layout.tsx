@@ -39,7 +39,7 @@ export function Layout() {
         <div className="account-area">{profile && <span className="account-name">{profile.nickname}</span>}{session ? <button className="login-link" disabled={busy} onClick={() => { void signOut() }}><LogOut size={16} /><span>{busy ? '처리 중' : '로그아웃'}</span></button> : <NavLink to="/login" className="login-link"><LogIn size={16} /><span>로그인</span></NavLink>}</div>
       </div>
     </header>
-    <div className="phase-notice"><Sparkles size={14} /><span>Phase 3 · 밴드별 로그인 연결 <span className="notice-detail">— 희망곡·합주 화면은 다음 단계에서 연결됩니다.</span></span></div>
+    <div className="phase-notice"><Sparkles size={14} /><span>Phase 4 · 우리 밴드의 희망곡 <span className="notice-detail">— 곡 등록·수정·검색을 사용할 수 있어요. 합주·투표 기능은 준비 중입니다.</span></span></div>
     {error && <p className="form-message error-message" role="alert">{error}</p>}
     <main id="main" className="main-container" tabIndex={-1}><Outlet /></main>
     <footer className="site-footer"><Music2 size={14} />함께 고르고, 함께 맞추고, 우리의 음악으로.</footer>

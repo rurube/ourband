@@ -10,7 +10,8 @@
     "typecheck": "tsc -b",
     "test:db": "node scripts/test-db.mjs",
     "check:edge": "deno check supabase/functions/band-auth/index.ts",
-    "test:edge": "deno test supabase/functions/_shared/security_test.ts"
+    "test:edge": "deno test supabase/functions/_shared/security_test.ts",
+    "test:songs": "deno test src/songs/model_test.ts"
   },
   "engines": {
     "node": ">=22.0.0"

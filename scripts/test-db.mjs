@@ -25,12 +25,12 @@ try {
     console.log(`PASS migration: ${name}`)
   }
   let total = 0
-  for (const suite of ['assertions.sql', 'band-auth.sql']) {
+  for (const suite of ['assertions.sql', 'band-auth.sql', 'song-catalog.sql']) {
     await db.exec('begin')
     const results = await db.exec(await readFile(`supabase/tests/${suite}`, 'utf8'))
     const assertions = results.flatMap(result => result.rows).filter(row => row.assertion)
     for (const row of assertions) console.log(`PASS: ${row.assertion}`)
-    if (assertions.length < (suite === 'assertions.sql' ? 90 : 35)) throw new Error('Database assertion suite did not run completely')
+    if (assertions.length < ({ 'assertions.sql': 90, 'band-auth.sql': 35, 'song-catalog.sql': 25 }[suite])) throw new Error('Database assertion suite did not run completely')
     await db.exec('rollback')
     total += assertions.length
   }
