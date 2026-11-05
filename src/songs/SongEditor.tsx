@@ -24,6 +24,8 @@ export function SongEditor({ bandId, initial, onClose, onSaved }: Props) {
       // Invalidate only this band's song queries. Active lists refresh; other
       // screens and inactive catalog pages do not make immediate network calls.
       void queryClient.invalidateQueries({ queryKey: songKeys.band(bandId) })
+      void queryClient.invalidateQueries({ queryKey: ['home-confirmed', bandId] })
+      void queryClient.invalidateQueries({ queryKey: ['home-rehearsals', bandId] })
       onSaved(saved)
     },
     onError: () => {

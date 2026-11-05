@@ -41,7 +41,7 @@ export function Layout() {
       </div>
       {session && <div className="band-switch-strip"><label htmlFor="active-band">현재 밴드</label><select id="active-band" aria-label="현재 밴드 선택" value={profile?.band_id ?? ''} onChange={e => selectBand(e.target.value)}>{!memberships.length && <option value="">참여한 밴드 없음</option>}{memberships.map(item => <option key={item.band_id} value={item.band_id}>{item.bandName} · {item.nickname} ({item.band_role === 'leader' ? '리더' : '멤버'})</option>)}</select><NavLink to="/band">밴드 추가·내 계정</NavLink></div>}
     </header>
-    <div className="phase-notice"><Sparkles size={14} /><span>Phase 4 · 우리 밴드의 희망곡 <span className="notice-detail">— 메인에서 모든 밴드의 일정과 확정곡을 확인하세요. 일정 등록·투표 기능은 준비 중입니다.</span></span></div>
+    <div className="phase-notice"><Sparkles size={14} /><span>Phase 5 · 함께 고르는 합주곡 <span className="notice-detail">— 좋아요·익명 댓글로 곡을 고르고 합주곡을 확정해보세요. 일정 등록은 준비 중입니다.</span></span></div>
     {error && <p className="form-message error-message" role="alert">{error}</p>}
     <main id="main" className="main-container" tabIndex={-1}><Outlet /></main>
     <footer className="site-footer"><Music2 size={14} />함께 고르고, 함께 맞추고, 우리의 음악으로.</footer>

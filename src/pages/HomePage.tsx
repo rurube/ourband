@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, CheckCheck, Home, RefreshCw, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth, type Profile } from '../auth/AuthProvider'
+import { PopularSongs } from '../songs/PopularSongs'
 import { fetchConfirmed, fetchRehearsals, overviewPageSize, seoulToday } from '../home/api'
 
 function Pagination({ page, total, change, label }: { page: number; total: number; change: (page: number) => void; label: string }) {
@@ -11,6 +12,7 @@ function Pagination({ page, total, change, label }: { page: number; total: numbe
 }
 function BandOverview({ band }: { band: Profile }) {
   const { selectBand } = useAuth()
+  const navigate = useNavigate()
   const [songPage, setSongPage] = useState(0)
   const [datePage, setDatePage] = useState(0)
   const [past, setPast] = useState(false)
@@ -19,6 +21,7 @@ function BandOverview({ band }: { band: Profile }) {
   const dates = useQuery({ queryKey: ['home-rehearsals', band.band_id, past, today, datePage], queryFn: ({ signal }) => fetchRehearsals(band.band_id, datePage, past, today, signal), staleTime: 30_000, refetchInterval: 60_000 })
   return <section className="panel home-band" aria-labelledby={`band-${band.band_id}`}>
     <div className="home-band-heading"><div><h2 id={`band-${band.band_id}`}><Users size={20} />{band.bandName}</h2><p>{band.nickname} · {band.band_role === 'leader' ? '리더' : '멤버'}</p></div><Link className="secondary-button" to="/songs" onClick={() => selectBand(band.band_id)}>이 밴드 희망곡 보기</Link></div>
+    <div className="home-popular"><PopularSongs bandId={band.band_id} onOpen={id => { selectBand(band.band_id); navigate(`/songs?song=${encodeURIComponent(id)}`) }} /></div>
     <div className="home-band-columns">
       <section><div className="home-section-heading"><h3><CalendarDays size={18} />합주 일정{dates.data && <small>{dates.data.total}건</small>}</h3><button className="text-button" disabled={dates.isFetching} aria-label={`${band.bandName} 일정 새로고침`} onClick={() => { void dates.refetch() }}><RefreshCw size={15} /></button></div>
         <div className="rehearsal-tabs" role="group" aria-label={`${band.bandName} 합주 기간`}>{[false, true].map(value => <button key={String(value)} aria-pressed={past === value} className={past === value ? 'selected' : ''} onClick={() => { setPast(value); setDatePage(0) }}>{value ? '지난 합주' : '다가오는 합주'}</button>)}</div>
